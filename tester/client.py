@@ -1,43 +1,81 @@
-import requests
 import time
+import requests
 
-class APIClient:
-    def __init__(self, base_url):
-        # C'est l'adresse principale de notre API (ex: l'adresse du restaurant)
-        self.base_url = base_url
+BASE_URL = "https://api.jikan.moe/v4"
+TIMEOUT = 5  # secondes
+MAX_RETRIES = 1
+RETRY_DELAY = 2  # secondes
 
-    def request(self, endpoint):
-        # On colle l'adresse principale avec la suite (ex: /anime/11061)
-        url = f"{self.base_url}{endpoint}"
-        max_retries = 1  # On s'autorise à réessayer 1 seule fois (Robustesse)
-        
-        for attempt in range(max_retries + 1):
-            start_time = time.time()  # On lance le chronomètre ⏱️
-            
-            try:
-                # On fait la requête avec un "timeout" de 3 secondes max
-                response = requests.get(url, timeout=3)
-                
-                # On arrête le chrono et on calcule le temps en millisecondes
-                latency = (time.time() - start_time) * 1000 
-                
-                # Si le serveur dit "Je suis surchargé" (429) ou "J'ai un bug" (5xx)
-                if response.status_code in [429, 500, 502, 503, 504]:
-                    if attempt < max_retries:
-                        print(f"Erreur {response.status_code}. On patiente 2s et on réessaie...")
-                        time.sleep(2)  # On attend 2 secondes avant la 2ème tentative
-                        continue  # On relance la boucle pour réessayer
-                
-                # Si le code est 200 (OK) ou 404 (Introuvable, ce qui est normal si on le teste exprès), on renvoie le résultat
-                return response, latency
-                
-            except requests.exceptions.RequestException as e:
-                # Si l'API ne répond pas du tout (Coupure internet, Timeout dépassé...)
-                if attempt < max_retries:
-                    print(f"L'API ne répond pas. On retente dans 2s...")
-                    time.sleep(2)
+
+def get(endpoint: str, params: dict = None) -> dict:
+    """
+    Effectue un GET sur l'API Jikan avec timeout, retry et gestion 429/5xx.
+    Retourne un dict avec : status_code, json, latency_ms, error
+    """
+    url = f"{BASE_URL}{endpoint}"
+    attempt = 0
+    last_error = None
+
+    while attempt <= MAX_RETRIES:
+        start = time.time()
+        try:
+            resp = requests.get(url, params=params, timeout=TIMEOUT)
+            latency_ms = round((time.time() - start) * 1000, 2)
+
+            # Gestion du rate limiting
+            if resp.status_code == 429:
+                if attempt < MAX_RETRIES:
+                    time.sleep(RETRY_DELAY)
+                    attempt += 1
                     continue
-                
-                # Si ça rate même après la deuxième tentative, on renvoie "None" (Rien)
-                latency = (time.time() - start_time) * 1000
-                return None, latency
+                return {
+                    "status_code": 429,
+                    "json": None,
+                    "latency_ms": latency_ms,
+                    "error": "Rate limited (429) apres retry"
+                }
+
+            # Gestion erreurs serveur 5xx
+            if resp.status_code >= 500:
+                if attempt < MAX_RETRIES:
+                    time.sleep(RETRY_DELAY)
+                    attempt += 1
+                    continue
+                return {
+                    "status_code": resp.status_code,
+                    "json": None,
+                    "latency_ms": latency_ms,
+                    "error": f"Erreur serveur ({resp.status_code}) apres retry"
+                }
+
+            try:
+                data = resp.json()
+            except Exception:
+                data = None
+
+            return {
+                "status_code": resp.status_code,
+                "json": data,
+                "latency_ms": latency_ms,
+                "error": None
+            }
+
+        except requests.exceptions.Timeout:
+            latency_ms = round((time.time() - start) * 1000, 2)
+            last_error = "Timeout"
+            if attempt < MAX_RETRIES:
+                time.sleep(RETRY_DELAY)
+                attempt += 1
+                continue
+            return {"status_code": None, "json": None, "latency_ms": latency_ms, "error": "Timeout"}
+
+        except requests.exceptions.RequestException as e:
+            latency_ms = round((time.time() - start) * 1000, 2)
+            last_error = str(e)
+            if attempt < MAX_RETRIES:
+                time.sleep(RETRY_DELAY)
+                attempt += 1
+                continue
+            return {"status_code": None, "json": None, "latency_ms": latency_ms, "error": str(e)}
+
+    return {"status_code": None, "json": None, "latency_ms": 0, "error": last_error or "Erreur inconnue"}
