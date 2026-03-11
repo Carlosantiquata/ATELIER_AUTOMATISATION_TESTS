@@ -1,7 +1,6 @@
 """
 flask_app.py — Application Flask principale.
 Déployé sur PythonAnywhere : carlosantiquata.pythonanywhere.com
-
 Routes :
   /          → /dashboard
   /run       → Déclenche un run (anti-spam 60s)
@@ -9,7 +8,6 @@ Routes :
   /health    → Santé de la solution (bonus)
   /export    → Export JSON (bonus)
 """
-
 import sys
 import os
 
@@ -29,10 +27,14 @@ app = Flask(__name__, template_folder=os.path.join(HERE, "templates"))
 _last_run_time = None
 RUN_COOLDOWN_SECONDS = 60
 
+# Init DB au démarrage (prod + local)
+storage.init_db()
+
 
 @app.route("/")
 def index():
     return redirect(url_for("dashboard"))
+
 
 @app.route("/run")
 def run():
@@ -57,7 +59,14 @@ def run():
 
 @app.route("/dashboard")
 def dashboard():
-    runs = storage.list_runs(limit=20)
+    raw_runs = storage.list_runs(limit=20)
+
+    # Aplatir summary dans chaque run pour le template
+    runs = []
+    for r in raw_runs:
+        flat = {**r, **r.get("summary", {}), "details": r.get("tests", [])}
+        runs.append(flat)
+
     last_run = runs[0] if runs else None
 
     chart_labels = []
@@ -66,7 +75,7 @@ def dashboard():
     for r in reversed(runs[:10]):
         ts = (r.get("timestamp") or "")[:16].replace("T", " ")
         chart_labels.append(ts)
-        chart_latency.append(r.get("latency_avg", 0))
+        chart_latency.append(r.get("latency_ms_avg", 0))
         chart_errors.append(round(r.get("error_rate", 0) * 100, 1))
 
     return render_template(
@@ -86,7 +95,8 @@ def health():
     status = "ok"
     message = "Aucun run enregistré."
     if last:
-        avail = last.get("availability", 0)
+        summary = last.get("summary", {})
+        avail = summary.get("availability", 0)
         message = (
             f"Dernier run : {(last.get('timestamp') or '')[:19]} | "
             f"disponibilité={round(avail * 100, 1)}%"
@@ -106,8 +116,5 @@ def export():
     return jsonify(data)
 
 
-storage.init_db()
-
 if __name__ == "__main__":
     app.run(debug=True)
-   
