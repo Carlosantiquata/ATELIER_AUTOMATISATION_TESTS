@@ -28,7 +28,7 @@ _last_run_time = None
 RUN_COOLDOWN_SECONDS = 60
 
 # Init DB au démarrage (prod + local)
-storage.init_db()
+storage.init_db
 
 
 @app.route("/")
