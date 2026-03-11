@@ -106,9 +106,8 @@ def export():
     return jsonify(data)
 
 
-if __name__ == "__main__":
-    storage.instorage.init_db()  
+storage.init_db()
 
 if __name__ == "__main__":
-    app.run(debug=True)it_db()
+    app.run(debug=True)
    
