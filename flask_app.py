@@ -33,7 +33,7 @@ storage.init_db()
 
 @app.route("/")
 def index():
-    return redirect(url_for("consignes.html"))
+    return render_template('consignes.html')
 
 
 @app.route("/run")
