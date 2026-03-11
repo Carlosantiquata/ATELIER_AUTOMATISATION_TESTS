@@ -105,7 +105,7 @@ def health():
 
 @app.route("/export")
 def export():
-    data = storage.export_all_json()
+    data = storage.export_all_json(limit=100)
     return jsonify(data)
 
 
