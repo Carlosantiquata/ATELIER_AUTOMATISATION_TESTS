@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Jikan API — Dashboard</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',sans-serif;background:#0f0f1a;color:#e0e0f0;min-height:100vh}
+    header{background:linear-gradient(135deg,#1a1a2e,#16213e);padding:20px 32px;border-bottom:2px solid #7c3aed;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+    header h1{font-size:1.4rem;color:#a78bfa}
+    header span{font-size:0.82rem;color:#94a3b8}
+    .run-btn{background:#7c3aed;color:#fff;padding:10px 20px;border:none;border-radius:8px;font-size:.9rem;cursor:pointer;text-decoration:none;transition:background .2s}
+    .run-btn:hover{background:#6d28d9}
+    .container{max-width:1200px;margin:0 auto;padding:24px 20px}
+    .kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:16px;margin-bottom:28px}
+    .kpi-card{background:#1e1e30;border:1px solid #2d2d50;border-radius:12px;padding:16px 18px;text-align:center}
+    .kpi-card .value{font-size:1.9rem;font-weight:700;color:#a78bfa}
+    .kpi-card .label{font-size:.75rem;color:#94a3b8;margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
+    .kpi-card.green .value{color:#34d399}
+    .kpi-card.red .value{color:#f87171}
+    .kpi-card.yellow .value{color:#fbbf24}
+    .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px}
+    @media(max-width:700px){.charts-grid{grid-template-columns:1fr}}
+    .chart-card{background:#1e1e30;border:1px solid #2d2d50;border-radius:12px;padding:18px}
+    .chart-card h3{font-size:.85rem;color:#94a3b8;margin-bottom:12px}
+    .section-title{font-size:1rem;color:#a78bfa;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid #2d2d50}
+    table{width:100%;border-collapse:collapse;font-size:.85rem;margin-bottom:28px}
+    th{background:#16213e;padding:9px 12px;text-align:left;color:#94a3b8;font-weight:600;font-size:.75rem;text-transform:uppercase}
+    td{padding:9px 12px;border-bottom:1px solid #16213e}
+    tr:hover td{background:#1e1e30}
+    .badge{display:inline-block;padding:2px 10px;border-radius:12px;font-size:.73rem;font-weight:700;letter-spacing:.5px}
+    .badge-pass{background:#065f46;color:#34d399}
+    .badge-fail{background:#7f1d1d;color:#f87171}
+    .badge-error{background:#78350f;color:#fbbf24}
+    .no-data{color:#475569;text-align:center;padding:40px;font-size:1.1rem}
+    .links{margin-top:20px;display:flex;gap:10px;flex-wrap:wrap}
+    .links a{color:#a78bfa;text-decoration:none;font-size:.83rem;border:1px solid #4c1d95;padding:6px 14px;border-radius:6px;transition:background .2s}
+    .links a:hover{background:#1e1e30}
+  </style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>🎯 Jikan API — Dashboard de Tests</h1>
+    <span>API : https://api.jikan.moe/v4 &nbsp;·&nbsp; Hunter x Hunter (MAL id 11061)</span>
+  </div>
+  <a href="/run" class="run-btn">▶ Lancer un run</a>
+</header>
+
+<div class="container">
+
+  {% if last_run %}
+  <div class="kpi-grid">
+    <div class="kpi-card green"><div class="value">{{ last_run.passed }}</div><div class="label">Tests passés</div></div>
+    <div class="kpi-card {% if last_run.failed > 0 %}red{% else %}green{% endif %}"><div class="value">{{ last_run.failed }}</div><div class="label">Tests échoués</div></div>
+    <div class="kpi-card {% if last_run.error_rate > 0.3 %}red{% elif last_run.error_rate > 0 %}yellow{% else %}green{% endif %}"><div class="value">{{ (last_run.error_rate * 100)|round(1) }}%</div><div class="label">Taux d'erreur</div></div>
+    <div class="kpi-card green"><div class="value">{{ (last_run.availability * 100)|round(1) }}%</div><div class="label">Disponibilité</div></div>
+    <div class="kpi-card {% if last_run.latency_avg > 2000 %}red{% elif last_run.latency_avg > 800 %}yellow{% else %}green{% endif %}"><div class="value">{{ last_run.latency_avg|round(0)|int }}ms</div><div class="label">Latence moy.</div></div>
+    <div class="kpi-card yellow"><div class="value">{{ last_run.latency_p95|round(0)|int }}ms</div><div class="label">Latence p95</div></div>
+  </div>
+  {% else %}
+  <div class="no-data">Aucun run encore — cliquez sur <strong>Lancer un run</strong> !</div>
+  {% endif %}
+
+  {% if chart_labels %}
+  <div class="charts-grid">
+    <div class="chart-card"><h3>📈 Latence moyenne (ms)</h3><canvas id="latChart" height="130"></canvas></div>
+    <div class="chart-card"><h3>⚠️ Taux d'erreur (%)</h3><canvas id="errChart" height="130"></canvas></div>
+  </div>
+  {% endif %}
+
+  {% if last_run %}
+  <div class="section-title">🔬 Détail du dernier run — {{ last_run.timestamp[:19] }}</div>
+  <table id="testsTable">
+    <thead><tr><th>Test</th><th>Statut</th><th>Latence</th><th>Détails</th></tr></thead>
+    <tbody id="testsBody"></tbody>
+  </table>
+  {% endif %}
+
+  <div class="section-title">📋 Historique des runs</div>
+  {% if runs %}
+  <table>
+    <thead><tr><th>#</th><th>Date</th><th>Passés</th><th>Échoués</th><th>Total</th><th>Dispo.</th><th>Erreurs</th><th>Lat. moy.</th><th>p95</th></tr></thead>
+    <tbody>
+    {% for run in runs %}
+    <tr>
+      <td>{{ run.id }}</td>
+      <td>{{ run.timestamp[:19]|replace("T"," ") }}</td>
+      <td style="color:#34d399">{{ run.passed }}</td>
+      <td style="color:{% if run.failed > 0 %}#f87171{% else %}#34d399{% endif %}">{{ run.failed }}</td>
+      <td>{{ run.total }}</td>
+      <td>{{ (run.availability*100)|round(1) }}%</td>
+      <td>{{ (run.error_rate*100)|round(1) }}%</td>
+      <td>{{ run.latency_avg|round(1) }}ms</td>
+      <td>{{ run.latency_p95|round(1) }}ms</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="no-data">Aucun historique.</div>
+  {% endif %}
+
+  <div class="links">
+    <a href="/run">▶ Lancer un run</a>
+    <a href="/health">❤️ /health</a>
+    <a href="/export">⬇ Export JSON</a>
+  </div>
+</div>
+
+<script>
+{% if last_run %}
+try {
+  const raw = {{ last_run.details | safe }};
+  const tests = typeof raw === 'string' ? JSON.parse(raw) : raw;
+  const tbody = document.getElementById('testsBody');
+  tests.forEach(t => {
+    const cls = t.status==='PASS'?'badge-pass':t.status==='FAIL'?'badge-fail':'badge-error';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${t.name||''}</td><td><span class="badge ${cls}">${t.status}</span></td><td>${t.latency_ms!=null?t.latency_ms+' ms':'—'}</td><td style="color:#94a3b8;font-size:.8rem">${t.details||''}</td>`;
+    tbody.appendChild(tr);
+  });
+} catch(e){ console.error(e); }
+{% endif %}
+
+{% if chart_labels %}
+const L = {{ chart_labels|tojson }};
+const LD = {{ chart_latency|tojson }};
+const ED = {{ chart_errors|tojson }};
+const cfg = (label,data,color)=>({type:'line',data:{labels:L,datasets:[{label,data,borderColor:color,backgroundColor:color+'26',borderWidth:2,pointRadius:4,tension:.3,fill:true}]},options:{responsive:true,plugins:{legend:{labels:{color:'#94a3b8'}}},scales:{x:{ticks:{color:'#64748b',maxRotation:30},grid:{color:'#1e293b'}},y:{ticks:{color:'#64748b'},grid:{color:'#1e293b'}}}}});
+new Chart(document.getElementById('latChart'),cfg('Latence moy. (ms)',LD,'#a78bfa'));
+new Chart(document.getElementById('errChart'),cfg("Taux d'erreur (%)",ED,'#f87171'));
+{% endif %}
+</script>
+</body>
+</html>
