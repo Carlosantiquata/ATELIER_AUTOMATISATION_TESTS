@@ -1,7 +1,7 @@
 # API Choice
 
-- Étudiant :
-- API choisie :
+- Étudiant : Alexis Carlos TERRAO BECA
+- API choisie : 
 - URL base :
 - Documentation officielle / README :
 - Auth : None / API Key / OAuth
