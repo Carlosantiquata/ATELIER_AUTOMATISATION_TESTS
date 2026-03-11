@@ -38,7 +38,7 @@ def index():
 @app.route("/run")
 def run():
     global _last_run_time
-    now = datetime.datetime.utcnow()
+    now = datetime.datetime.now(datetime.timezone.utc)
 
     if _last_run_time is not None:
         elapsed = (now - _last_run_time).total_seconds()
@@ -50,9 +50,12 @@ def run():
             }), 429
 
     _last_run_time = now
-    result = run_all()
-    storage.save_run(result)
-    return jsonify(result)
+   try:
+        result = run_all()
+        storage.save_run(result)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 
 @app.route("/dashboard")
@@ -107,5 +110,8 @@ def export():
 
 
 if __name__ == "__main__":
-    storage.init_db()
-    app.run(debug=True)
+    storage.instorage.init_db()  
+
+if __name__ == "__main__":
+    app.run(debug=True)it_db()
+   
