@@ -34,12 +34,10 @@ RUN_COOLDOWN_SECONDS = 60
 def index():
     return redirect(url_for("dashboard"))
 
-
 @app.route("/run")
 def run():
     global _last_run_time
     now = datetime.datetime.now(datetime.timezone.utc)
-
     if _last_run_time is not None:
         elapsed = (now - _last_run_time).total_seconds()
         if elapsed < RUN_COOLDOWN_SECONDS:
@@ -48,9 +46,8 @@ def run():
                 "status": "throttled",
                 "message": f"Veuillez attendre encore {wait}s avant le prochain run."
             }), 429
-
     _last_run_time = now
-   try:
+    try:
         result = run_all()
         storage.save_run(result)
         return jsonify(result)
