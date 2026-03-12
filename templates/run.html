@@ -4,382 +4,82 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Run Tests — Jikan API</title>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&family=Syne:wght@700;800&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <style>
-    :root {
-      --bg: #080c10;
-      --panel: #0d1117;
-      --border: #1e2d3d;
-      --ok: #00ff88;
-      --error: #ff3b5c;
-      --warn: #ffb800;
-      --accent: #00c9ff;
-      --text: #c9d1d9;
-      --muted: #4a5568;
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'JetBrains Mono', monospace;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.07) 2px, rgba(0,0,0,0.07) 4px);
-      pointer-events: none;
-      z-index: 100;
-    }
-
-    body::after {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image:
-        linear-gradient(rgba(0,201,255,0.025) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0,201,255,0.025) 1px, transparent 1px);
-      background-size: 40px 40px;
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    header {
-      position: relative;
-      z-index: 10;
-      padding: 18px 40px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: rgba(13,17,23,0.95);
-      backdrop-filter: blur(10px);
-    }
-
-    .logo {
-      font-family: 'Syne', sans-serif;
-      font-weight: 800;
-      font-size: 0.9rem;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: var(--accent);
-    }
-    .logo span { color: var(--muted); font-weight: 400; }
-
-    .nav { display: flex; gap: 24px; }
-    .nav a {
-      font-size: 0.7rem;
-      color: var(--muted);
-      text-decoration: none;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      transition: color 0.2s;
-    }
-    .nav a:hover { color: var(--accent); }
-
-    main {
-      position: relative;
-      z-index: 10;
-      flex: 1;
-      max-width: 800px;
-      margin: 50px auto;
-      padding: 0 24px;
-      width: 100%;
-    }
-
-    /* Hero */
-    .hero {
-      margin-bottom: 40px;
-      opacity: 0;
-      animation: fadeUp 0.5s ease forwards 0.1s;
-    }
-
-    .hero-label {
-      font-size: 0.65rem;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 12px;
-    }
-
-    .hero h1 {
-      font-family: 'Syne', sans-serif;
-      font-weight: 800;
-      font-size: 2.8rem;
-      letter-spacing: -0.03em;
-      color: var(--text);
-      line-height: 1;
-    }
-
-    .hero h1 span { color: var(--accent); }
-
-    /* Big run button */
-    .run-zone {
-      margin-bottom: 40px;
-      opacity: 0;
-      animation: fadeUp 0.5s ease forwards 0.2s;
-    }
-
-    #runBtn {
-      width: 100%;
-      padding: 28px;
-      background: transparent;
-      border: 1px solid var(--ok);
-      color: var(--ok);
-      font-family: 'Syne', sans-serif;
-      font-weight: 800;
-      font-size: 1.4rem;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      cursor: pointer;
-      transition: all 0.2s;
-      position: relative;
-      overflow: hidden;
-    }
-
-    #runBtn::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: var(--ok);
-      transform: scaleX(0);
-      transform-origin: left;
-      transition: transform 0.3s ease;
-      z-index: 0;
-    }
-
-    #runBtn:hover::before { transform: scaleX(1); }
-    #runBtn:hover { color: #000; }
-    #runBtn span { position: relative; z-index: 1; }
-
-    #runBtn:disabled {
-      border-color: var(--muted);
-      color: var(--muted);
-      cursor: not-allowed;
-    }
-    #runBtn:disabled::before { display: none; }
-
-    /* Progress bar */
-    .progress-wrap {
-      height: 2px;
-      background: var(--border);
-      margin-bottom: 40px;
-      overflow: hidden;
-      opacity: 0;
-      transition: opacity 0.3s;
-    }
-
-    .progress-wrap.visible { opacity: 1; }
-
-    .progress-bar {
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(90deg, var(--accent), var(--ok));
-      transition: width 0.4s ease;
-      box-shadow: 0 0 10px var(--ok);
-    }
-
-    .progress-bar.indeterminate {
-      width: 40%;
-      animation: slide 1s ease-in-out infinite;
-    }
-
-    @keyframes slide {
-      0% { transform: translateX(-100%); }
-      100% { transform: translateX(300%); }
-    }
-
-    /* Terminal */
-    .terminal {
-      border: 1px solid var(--border);
-      background: #050810;
-      margin-bottom: 40px;
-      opacity: 0;
-      animation: fadeUp 0.5s ease forwards 0.3s;
-    }
-
-    .terminal-header {
-      padding: 10px 20px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: #080c12;
-    }
-
-    .dot { width: 10px; height: 10px; border-radius: 50%; }
-    .dot.r { background: #ff5f56; }
-    .dot.y { background: #ffbd2e; }
-    .dot.g { background: #27c93f; }
-
-    .terminal-title {
-      font-size: 0.7rem;
-      color: var(--muted);
-      margin-left: 8px;
-    }
-
-    .terminal-body {
-      padding: 20px;
-      font-size: 0.78rem;
-      line-height: 1.9;
-      min-height: 120px;
-      max-height: 320px;
-      overflow-y: auto;
-    }
-
-    .log { display: flex; gap: 12px; align-items: flex-start; }
-    .log-t { color: var(--muted); flex-shrink: 0; font-size: 0.7rem; padding-top: 2px; }
-    .log-m { flex: 1; }
-    .log-m.ok { color: var(--ok); }
-    .log-m.err { color: var(--error); }
-    .log-m.warn { color: var(--warn); }
-    .log-m.dim { color: var(--muted); }
-    .log-m.accent { color: var(--accent); }
-
-    .cursor {
-      display: inline-block;
-      width: 7px; height: 13px;
-      background: var(--ok);
-      animation: blink 1s step-end infinite;
-      vertical-align: middle;
-    }
-    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
-
-    /* Results */
-    #results {
-      display: none;
-      opacity: 0;
-      animation: fadeUp 0.4s ease forwards;
-    }
-
-    .results-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 16px;
-    }
-
-    .results-title {
-      font-family: 'Syne', sans-serif;
-      font-weight: 800;
-      font-size: 1rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-    }
-
-    .kpi-row {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
-      margin-bottom: 24px;
-    }
-
-    @media(max-width:600px) { .kpi-row { grid-template-columns: repeat(2,1fr); } }
-
-    .kpi {
-      padding: 16px;
-      border: 1px solid var(--border);
-      background: var(--panel);
-      text-align: center;
-    }
-
-    .kpi-v {
-      font-family: 'Syne', sans-serif;
-      font-weight: 800;
-      font-size: 1.6rem;
-      letter-spacing: -0.02em;
-    }
-
-    .kpi-v.ok { color: var(--ok); }
-    .kpi-v.bad { color: var(--error); }
-    .kpi-v.warn { color: var(--warn); }
-    .kpi-v.info { color: var(--accent); }
-
-    .kpi-l {
-      font-size: 0.62rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-top: 4px;
-    }
-
-    /* Tests table */
-    table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
-    th {
-      text-align: left;
-      padding: 8px 12px;
-      font-size: 0.65rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--muted);
-      border-bottom: 1px solid var(--border);
-    }
-    td {
-      padding: 10px 12px;
-      border-bottom: 1px solid #0d1117;
-    }
-    tr:hover td { background: rgba(255,255,255,0.02); }
-
-    .badge {
-      display: inline-block;
-      padding: 2px 10px;
-      border-radius: 2px;
-      font-size: 0.68rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-    }
-    .badge-pass { background: rgba(0,255,136,0.12); color: var(--ok); border: 1px solid rgba(0,255,136,0.3); }
-    .badge-fail { background: rgba(255,59,92,0.12); color: var(--error); border: 1px solid rgba(255,59,92,0.3); }
-    .badge-error { background: rgba(255,184,0,0.12); color: var(--warn); border: 1px solid rgba(255,184,0,0.3); }
-
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(16px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Throttle notice */
-    #throttleMsg {
-      display: none;
-      padding: 16px 20px;
-      border: 1px solid var(--warn);
-      background: rgba(255,184,0,0.06);
-      color: var(--warn);
-      font-size: 0.8rem;
-      margin-bottom: 16px;
-    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',sans-serif;background:#0f0f1a;color:#e0e0f0;min-height:100vh}
+    header{background:linear-gradient(135deg,#1a1a2e,#16213e);padding:20px 32px;border-bottom:2px solid #7c3aed;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+    header h1{font-size:1.4rem;color:#a78bfa}
+    header span{font-size:0.82rem;color:#94a3b8}
+    .nav-links-header{display:flex;gap:12px}
+    .nav-links-header a{color:#a78bfa;text-decoration:none;font-size:.85rem;border:1px solid #4c1d95;padding:8px 16px;border-radius:8px;transition:background .2s}
+    .nav-links-header a:hover{background:#1e1e30}
+    .container{max-width:900px;margin:0 auto;padding:24px 20px}
+    .section-title{font-size:1rem;color:#a78bfa;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid #2d2d50}
+    .run-zone{margin-bottom:28px}
+    .run-btn-big{width:100%;padding:22px;background:#7c3aed;color:#fff;border:none;border-radius:10px;font-size:1.1rem;font-weight:700;cursor:pointer;transition:background .2s;letter-spacing:.05em}
+    .run-btn-big:hover{background:#6d28d9}
+    .run-btn-big:disabled{background:#2d2d50;color:#64748b;cursor:not-allowed}
+    .progress-wrap{height:4px;background:#1e1e30;border-radius:2px;margin-bottom:28px;overflow:hidden;opacity:0;transition:opacity .3s}
+    .progress-wrap.visible{opacity:1}
+    .progress-bar{height:100%;width:0%;background:linear-gradient(90deg,#7c3aed,#a78bfa);transition:width .4s ease}
+    .progress-bar.indeterminate{width:40%;animation:slide 1s ease-in-out infinite}
+    @keyframes slide{0%{transform:translateX(-100%)}100%{transform:translateX(300%)}}
+    .throttle-msg{display:none;background:#78350f22;border:1px solid #fbbf24;border-radius:8px;padding:14px 18px;color:#fbbf24;font-size:.85rem;margin-bottom:20px}
+    .terminal{background:#0a0a1a;border:1px solid #2d2d50;border-radius:10px;margin-bottom:28px;overflow:hidden}
+    .terminal-header{background:#16213e;padding:10px 16px;display:flex;align-items:center;gap:8px}
+    .dot{width:10px;height:10px;border-radius:50%}
+    .dot.r{background:#ff5f56}.dot.y{background:#ffbd2e}.dot.g{background:#27c93f}
+    .terminal-title{font-size:.75rem;color:#64748b;margin-left:8px;font-family:monospace}
+    .terminal-body{padding:16px;font-family:monospace;font-size:.78rem;line-height:1.9;min-height:100px;max-height:280px;overflow-y:auto}
+    .log{display:flex;gap:12px}
+    .log-t{color:#475569;flex-shrink:0}
+    .log-m{flex:1}
+    .log-m.ok{color:#34d399}.log-m.err{color:#f87171}.log-m.warn{color:#fbbf24}.log-m.dim{color:#475569}.log-m.accent{color:#a78bfa}
+    .cursor{display:inline-block;width:7px;height:13px;background:#34d399;animation:blink 1s step-end infinite;vertical-align:middle}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+    .kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:16px;margin-bottom:28px}
+    .kpi-card{background:#1e1e30;border:1px solid #2d2d50;border-radius:12px;padding:16px 18px;text-align:center}
+    .kpi-card .value{font-size:1.9rem;font-weight:700;color:#a78bfa}
+    .kpi-card .label{font-size:.75rem;color:#94a3b8;margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
+    .kpi-card.green .value{color:#34d399}
+    .kpi-card.red .value{color:#f87171}
+    .kpi-card.yellow .value{color:#fbbf24}
+    table{width:100%;border-collapse:collapse;font-size:.85rem;margin-bottom:28px}
+    th{background:#16213e;padding:9px 12px;text-align:left;color:#94a3b8;font-weight:600;font-size:.75rem;text-transform:uppercase}
+    td{padding:9px 12px;border-bottom:1px solid #16213e}
+    tr:hover td{background:#1e1e30}
+    .badge{display:inline-block;padding:2px 10px;border-radius:12px;font-size:.73rem;font-weight:700;letter-spacing:.5px}
+    .badge-pass{background:#065f46;color:#34d399}
+    .badge-fail{background:#7f1d1d;color:#f87171}
+    .badge-error{background:#78350f;color:#fbbf24}
+    #results{display:none}
+    .links{margin-top:20px;display:flex;gap:10px;flex-wrap:wrap}
+    .links a{color:#a78bfa;text-decoration:none;font-size:.83rem;border:1px solid #4c1d95;padding:6px 14px;border-radius:6px;transition:background .2s}
+    .links a:hover{background:#1e1e30}
+    .no-data{color:#475569;text-align:center;padding:40px;font-size:1.1rem}
   </style>
 </head>
 <body>
-
 <header>
-  <div class="logo">JIKAN<span>/run</span></div>
-  <nav class="nav">
+  <div>
+    <h1>▶ Lancer un Run</h1>
+    <span>API : https://api.jikan.moe/v4 &nbsp;·&nbsp; Hunter x Hunter (MAL id 11061)</span>
+  </div>
+  <div class="nav-links-header">
     <a href="/dashboard">Dashboard</a>
     <a href="/health">Health</a>
-    <a href="/export">Export</a>
-  </nav>
+    <a href="/export-page">Export</a>
+  </div>
 </header>
 
-<main>
-
-  <div class="hero">
-    <div class="hero-label">// test runner</div>
-    <h1>LANCER<br><span>UN RUN</span></h1>
-  </div>
-
-  <div id="throttleMsg">⏳ <span id="throttleText"></span></div>
+<div class="container">
 
   <div class="run-zone">
-    <button id="runBtn" onclick="startRun()">
-      <span>▶ &nbsp; Exécuter les tests</span>
-    </button>
+    <button class="run-btn-big" id="runBtn" onclick="startRun()">▶ &nbsp; Exécuter les tests</button>
   </div>
+
+  <div class="throttle-msg" id="throttleMsg">⏳ <span id="throttleText"></span></div>
 
   <div class="progress-wrap" id="progressWrap">
     <div class="progress-bar indeterminate" id="progressBar"></div>
@@ -399,15 +99,12 @@
   </div>
 
   <div id="results">
-    <div class="results-header">
-      <div class="results-title">Résultats</div>
-      <span style="font-size:0.72rem;color:var(--muted)" id="runTs"></span>
-    </div>
-    <div class="kpi-row">
-      <div class="kpi"><div class="kpi-v ok" id="kpiPass">—</div><div class="kpi-l">Passés</div></div>
-      <div class="kpi"><div class="kpi-v bad" id="kpiFail">—</div><div class="kpi-l">Échoués</div></div>
-      <div class="kpi"><div class="kpi-v info" id="kpiLat">—</div><div class="kpi-l">Lat. moy.</div></div>
-      <div class="kpi"><div class="kpi-v warn" id="kpiErr">—</div><div class="kpi-l">Taux erreur</div></div>
+    <div class="section-title">🔬 Résultats du run — <span id="runTs"></span></div>
+    <div class="kpi-grid">
+      <div class="kpi-card green"><div class="value" id="kpiPass">—</div><div class="label">Tests passés</div></div>
+      <div class="kpi-card" id="kpiFailCard"><div class="value" id="kpiFail">—</div><div class="label">Tests échoués</div></div>
+      <div class="kpi-card"><div class="value" id="kpiLat" style="color:#a78bfa">—</div><div class="label">Latence moy.</div></div>
+      <div class="kpi-card yellow"><div class="value" id="kpiErr">—</div><div class="label">Taux d'erreur</div></div>
     </div>
     <table>
       <thead><tr><th>Test</th><th>Statut</th><th>Latence</th><th>Détails</th></tr></thead>
@@ -415,7 +112,13 @@
     </table>
   </div>
 
-</main>
+  <div class="links">
+    <a href="/dashboard">📊 Dashboard</a>
+    <a href="/health">❤️ Health</a>
+    <a href="/export-page">⬇ Export JSON</a>
+  </div>
+
+</div>
 
 <script>
   document.getElementById('initTime').textContent = new Date().toLocaleTimeString('fr-FR');
@@ -424,10 +127,8 @@
 
   function addLog(msg, cls = '') {
     const body = document.getElementById('termBody');
-    // Retire le curseur idle si présent
     const idle = body.querySelector('.log-m.dim');
     if (idle) idle.closest('.log')?.remove();
-
     const div = document.createElement('div');
     div.className = 'log';
     div.innerHTML = `<span class="log-t">${t()}</span><span class="log-m ${cls}">${msg}</span>`;
@@ -444,7 +145,6 @@
     btn.disabled = true;
     throttleMsg.style.display = 'none';
     document.getElementById('results').style.display = 'none';
-
     progressWrap.classList.add('visible');
     progressBar.className = 'progress-bar indeterminate';
 
@@ -467,13 +167,12 @@
       if (data.status === 'error') {
         progressBar.className = 'progress-bar';
         progressBar.style.width = '100%';
-        progressBar.style.background = 'var(--error)';
+        progressBar.style.background = '#f87171';
         addLog('✖ Erreur : ' + data.message, 'err');
         btn.disabled = false;
         return;
       }
 
-      // Succès
       progressBar.className = 'progress-bar';
       progressBar.style.width = '100%';
 
@@ -482,39 +181,26 @@
       addLog(`  Latence moy. : ${s.latency_ms_avg || 0}ms  |  p95 : ${s.latency_ms_p95 || 0}ms`, 'dim');
       addLog(`  Taux d'erreur : ${((s.error_rate || 0)*100).toFixed(1)}%  |  Disponibilité : ${((s.availability || 1)*100).toFixed(1)}%`, 'dim');
 
-      // KPI
       document.getElementById('kpiPass').textContent = s.passed ?? '—';
       document.getElementById('kpiFail').textContent = s.failed ?? '—';
-      document.getElementById('kpiLat').textContent = (s.latency_ms_avg != null ? s.latency_ms_avg + 'ms' : '—');
-      document.getElementById('kpiErr').textContent = (s.error_rate != null ? ((s.error_rate)*100).toFixed(1) + '%' : '—');
+      document.getElementById('kpiLat').textContent = s.latency_ms_avg != null ? s.latency_ms_avg + 'ms' : '—';
+      document.getElementById('kpiErr').textContent = s.error_rate != null ? ((s.error_rate)*100).toFixed(1) + '%' : '—';
+      document.getElementById('kpiFailCard').className = 'kpi-card ' + ((s.failed || 0) > 0 ? 'red' : 'green');
+      document.getElementById('runTs').textContent = (data.timestamp || '').replace('T',' ').slice(0,19);
 
-      document.getElementById('kpiFail').className = 'kpi-v ' + ((s.failed || 0) > 0 ? 'bad' : 'ok');
-
-      // Timestamp
-      document.getElementById('runTs').textContent = (data.timestamp || '').replace('T', ' ').slice(0,19);
-
-      // Tests
       const tbody = document.getElementById('testRows');
       tbody.innerHTML = '';
-      const tests = data.tests || [];
-      tests.forEach(test => {
+      (data.tests || []).forEach(test => {
         const cls = test.status === 'PASS' ? 'badge-pass' : test.status === 'FAIL' ? 'badge-fail' : 'badge-error';
         const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${test.name || '—'}</td>
-          <td><span class="badge ${cls}">${test.status}</span></td>
-          <td style="color:var(--muted)">${test.latency_ms != null ? test.latency_ms + ' ms' : '—'}</td>
-          <td style="color:var(--muted);font-size:.75rem">${test.details || ''}</td>
-        `;
+        tr.innerHTML = `<td>${test.name||'—'}</td><td><span class="badge ${cls}">${test.status}</span></td><td>${test.latency_ms != null ? test.latency_ms+' ms' : '—'}</td><td style="color:#94a3b8;font-size:.8rem">${test.details||''}</td>`;
         tbody.appendChild(tr);
       });
 
-      const resultsEl = document.getElementById('results');
-      resultsEl.style.display = 'block';
-
+      document.getElementById('results').style.display = 'block';
       setTimeout(() => { progressWrap.classList.remove('visible'); }, 800);
 
-    } catch (e) {
+    } catch(e) {
       addLog('✖ Erreur réseau : ' + e.message, 'err');
       progressWrap.classList.remove('visible');
     }
@@ -522,6 +208,5 @@
     btn.disabled = false;
   }
 </script>
-
 </body>
 </html>
