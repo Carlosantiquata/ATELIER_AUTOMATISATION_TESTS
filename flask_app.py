@@ -82,7 +82,7 @@ def health():
 
 @app.route("/export")
 def export():
-    return jsonify(storage.export_all_json(limit=100))
+    return jsonify(storage.list_runs(limit=100))
 
 if __name__ == "__main__":
     app.run(debug=True)
