@@ -4,460 +4,81 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Export JSON — Jikan API</title>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&family=Syne:wght@700;800&display=swap" rel="stylesheet"/>
   <style>
-    :root {
-      --bg: #080c10;
-      --panel: #0d1117;
-      --border: #1e2d3d;
-      --ok: #00ff88;
-      --error: #ff3b5c;
-      --warn: #ffb800;
-      --accent: #00c9ff;
-      --text: #c9d1d9;
-      --muted: #4a5568;
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'JetBrains Mono', monospace;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.07) 2px, rgba(0,0,0,0.07) 4px);
-      pointer-events: none;
-      z-index: 100;
-    }
-
-    body::after {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image:
-        linear-gradient(rgba(0,201,255,0.025) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0,201,255,0.025) 1px, transparent 1px);
-      background-size: 40px 40px;
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    header {
-      position: relative;
-      z-index: 10;
-      padding: 18px 40px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: rgba(13,17,23,0.95);
-      backdrop-filter: blur(10px);
-    }
-
-    .logo {
-      font-family: 'Syne', sans-serif;
-      font-weight: 800;
-      font-size: 0.9rem;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: var(--accent);
-    }
-    .logo span { color: var(--muted); font-weight: 400; }
-
-    .nav { display: flex; gap: 24px; }
-    .nav a {
-      font-size: 0.7rem;
-      color: var(--muted);
-      text-decoration: none;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      transition: color 0.2s;
-    }
-    .nav a:hover { color: var(--accent); }
-
-    main {
-      position: relative;
-      z-index: 10;
-      flex: 1;
-      max-width: 900px;
-      margin: 50px auto;
-      padding: 0 24px;
-      width: 100%;
-    }
-
-    .hero {
-      margin-bottom: 40px;
-      opacity: 0;
-      animation: fadeUp 0.5s ease forwards 0.1s;
-    }
-
-    .hero-label {
-      font-size: 0.65rem;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 12px;
-    }
-
-    .hero h1 {
-      font-family: 'Syne', sans-serif;
-      font-weight: 800;
-      font-size: 2.8rem;
-      letter-spacing: -0.03em;
-      color: var(--text);
-      line-height: 1;
-    }
-
-    .hero h1 span { color: var(--accent); }
-
-    /* Stats row */
-    .stats-row {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-      margin-bottom: 32px;
-      opacity: 0;
-      animation: fadeUp 0.5s ease forwards 0.2s;
-    }
-
-    @media(max-width:600px) { .stats-row { grid-template-columns: 1fr; } }
-
-    .stat {
-      padding: 18px 20px;
-      border: 1px solid var(--border);
-      background: var(--panel);
-    }
-
-    .stat-v {
-      font-family: 'Syne', sans-serif;
-      font-weight: 800;
-      font-size: 1.8rem;
-      color: var(--accent);
-      letter-spacing: -0.02em;
-    }
-
-    .stat-l {
-      font-size: 0.62rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-top: 4px;
-    }
-
-    /* Action buttons */
-    .actions {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 32px;
-      opacity: 0;
-      animation: fadeUp 0.5s ease forwards 0.25s;
-      flex-wrap: wrap;
-    }
-
-    .btn {
-      padding: 12px 24px;
-      border: 1px solid;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.78rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      cursor: pointer;
-      transition: all 0.2s;
-      background: transparent;
-    }
-
-    .btn-dl {
-      border-color: var(--ok);
-      color: var(--ok);
-    }
-    .btn-dl:hover {
-      background: rgba(0,255,136,0.1);
-      box-shadow: 0 0 20px rgba(0,255,136,0.15);
-    }
-
-    .btn-copy {
-      border-color: var(--accent);
-      color: var(--accent);
-    }
-    .btn-copy:hover {
-      background: rgba(0,201,255,0.1);
-    }
-
-    .btn-refresh {
-      border-color: var(--border);
-      color: var(--muted);
-    }
-    .btn-refresh:hover {
-      border-color: var(--muted);
-      color: var(--text);
-    }
-
-    /* Filters */
-    .filters {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 20px;
-      align-items: center;
-      opacity: 0;
-      animation: fadeUp 0.5s ease forwards 0.3s;
-      flex-wrap: wrap;
-    }
-
-    .filter-label {
-      font-size: 0.65rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-
-    .filter-select {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      color: var(--text);
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.75rem;
-      padding: 6px 12px;
-      cursor: pointer;
-    }
-
-    .filter-select:focus { outline: 1px solid var(--accent); }
-
-    .search-input {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      color: var(--text);
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.75rem;
-      padding: 6px 12px;
-      flex: 1;
-      min-width: 200px;
-    }
-
-    .search-input::placeholder { color: var(--muted); }
-    .search-input:focus { outline: 1px solid var(--accent); }
-
-    /* JSON viewer */
-    .json-panel {
-      border: 1px solid var(--border);
-      background: #050810;
-      opacity: 0;
-      animation: fadeUp 0.5s ease forwards 0.35s;
-    }
-
-    .json-panel-header {
-      padding: 10px 20px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: #080c14;
-    }
-
-    .json-panel-header-left {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .dot { width: 10px; height: 10px; border-radius: 50%; }
-    .dot.r { background: #ff5f56; }
-    .dot.y { background: #ffbd2e; }
-    .dot.g { background: #27c93f; }
-
-    .json-title {
-      font-size: 0.7rem;
-      color: var(--muted);
-      margin-left: 8px;
-    }
-
-    .record-count {
-      font-size: 0.68rem;
-      color: var(--muted);
-    }
-
-    .record-count span { color: var(--accent); }
-
-    /* Runs list */
-    .runs-list {
-      max-height: 500px;
-      overflow-y: auto;
-    }
-
-    .runs-list::-webkit-scrollbar { width: 4px; }
-    .runs-list::-webkit-scrollbar-track { background: transparent; }
-    .runs-list::-webkit-scrollbar-thumb { background: var(--border); }
-
-    .run-item {
-      border-bottom: 1px solid #0d1117;
-      cursor: pointer;
-      transition: background 0.15s;
-    }
-
-    .run-item:hover { background: rgba(255,255,255,0.02); }
-    .run-item.active { background: rgba(0,201,255,0.04); border-left: 2px solid var(--accent); }
-
-    .run-item-header {
-      padding: 14px 20px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-    }
-
-    .run-item-left {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-
-    .run-id {
-      font-size: 0.65rem;
-      color: var(--muted);
-      width: 28px;
-    }
-
-    .run-ts {
-      font-size: 0.75rem;
-      color: var(--text);
-    }
-
-    .run-badges {
-      display: flex;
-      gap: 8px;
-    }
-
-    .badge {
-      display: inline-block;
-      padding: 2px 8px;
-      font-size: 0.65rem;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-    }
-
-    .badge-pass { background: rgba(0,255,136,0.1); color: var(--ok); border: 1px solid rgba(0,255,136,0.25); }
-    .badge-fail { background: rgba(255,59,92,0.1); color: var(--error); border: 1px solid rgba(255,59,92,0.25); }
-    .badge-lat  { background: rgba(0,201,255,0.1); color: var(--accent); border: 1px solid rgba(0,201,255,0.25); }
-
-    .run-detail {
-      display: none;
-      padding: 0 20px 16px 20px;
-    }
-
-    .run-item.active .run-detail { display: block; }
-
-    .json-block {
-      background: #030508;
-      padding: 16px;
-      font-size: 0.72rem;
-      line-height: 1.7;
-      border: 1px solid #0d1520;
-      overflow-x: auto;
-      white-space: pre;
-      color: #8b9dc3;
-      max-height: 260px;
-      overflow-y: auto;
-    }
-
-    /* JSON syntax highlight */
-    .j-key { color: #79b8ff; }
-    .j-str { color: #9ecbff; }
-    .j-num { color: #f97583; }
-    .j-bool { color: #ffab70; }
-    .j-null { color: var(--muted); }
-
-    /* Loading */
-    #loadingState {
-      padding: 48px 20px;
-      text-align: center;
-      color: var(--muted);
-      font-size: 0.8rem;
-    }
-
-    .spinner {
-      display: inline-block;
-      width: 20px; height: 20px;
-      border: 2px solid var(--border);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      margin-right: 10px;
-      vertical-align: middle;
-    }
-
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    #emptyState {
-      display: none;
-      padding: 48px 20px;
-      text-align: center;
-      color: var(--muted);
-      font-size: 0.8rem;
-    }
-
-    /* Copy toast */
-    .toast {
-      position: fixed;
-      bottom: 32px;
-      right: 32px;
-      padding: 12px 24px;
-      background: var(--panel);
-      border: 1px solid var(--ok);
-      color: var(--ok);
-      font-size: 0.75rem;
-      z-index: 200;
-      opacity: 0;
-      transform: translateY(10px);
-      transition: all 0.3s;
-      pointer-events: none;
-    }
-
-    .toast.show { opacity: 1; transform: translateY(0); }
-
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(16px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',sans-serif;background:#0f0f1a;color:#e0e0f0;min-height:100vh}
+    header{background:linear-gradient(135deg,#1a1a2e,#16213e);padding:20px 32px;border-bottom:2px solid #7c3aed;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+    header h1{font-size:1.4rem;color:#a78bfa}
+    header span{font-size:0.82rem;color:#94a3b8}
+    .nav-links-header{display:flex;gap:12px}
+    .nav-links-header a{color:#a78bfa;text-decoration:none;font-size:.85rem;border:1px solid #4c1d95;padding:8px 16px;border-radius:8px;transition:background .2s}
+    .nav-links-header a:hover{background:#1e1e30}
+    .container{max-width:1100px;margin:0 auto;padding:24px 20px}
+    .section-title{font-size:1rem;color:#a78bfa;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid #2d2d50}
+    .kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:16px;margin-bottom:28px}
+    .kpi-card{background:#1e1e30;border:1px solid #2d2d50;border-radius:12px;padding:16px 18px;text-align:center}
+    .kpi-card .value{font-size:1.9rem;font-weight:700;color:#a78bfa}
+    .kpi-card .label{font-size:.75rem;color:#94a3b8;margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
+    .kpi-card.green .value{color:#34d399}
+    .kpi-card.yellow .value{color:#fbbf24}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+    .btn{padding:9px 18px;border-radius:8px;font-size:.83rem;cursor:pointer;font-family:'Segoe UI',sans-serif;font-weight:600;border:none;transition:all .2s}
+    .btn-dl{background:#7c3aed;color:#fff}.btn-dl:hover{background:#6d28d9}
+    .btn-copy{background:#1e1e30;color:#a78bfa;border:1px solid #4c1d95}.btn-copy:hover{background:#2d2d50}
+    .btn-refresh{background:#1e1e30;color:#94a3b8;border:1px solid #2d2d50}.btn-refresh:hover{background:#2d2d50}
+    .filters{display:flex;gap:10px;margin-bottom:16px;align-items:center;flex-wrap:wrap}
+    .filter-label{font-size:.75rem;color:#94a3b8}
+    input[type=text], select{background:#1e1e30;border:1px solid #2d2d50;color:#e0e0f0;font-family:'Segoe UI',sans-serif;font-size:.8rem;padding:7px 12px;border-radius:8px}
+    input[type=text]{flex:1;min-width:200px}
+    input[type=text]:focus,select:focus{outline:1px solid #7c3aed}
+    .runs-panel{background:#0a0a1a;border:1px solid #2d2d50;border-radius:10px;overflow:hidden;margin-bottom:28px}
+    .runs-panel-header{background:#16213e;padding:10px 16px;display:flex;align-items:center;justify-content:space-between}
+    .runs-panel-header span{font-size:.75rem;color:#64748b}
+    .runs-panel-header .count{color:#a78bfa}
+    .run-item{border-bottom:1px solid #16213e;cursor:pointer;transition:background .15s}
+    .run-item:hover{background:#16213e}
+    .run-item.active{background:#1e1e30;border-left:3px solid #7c3aed}
+    .run-item-header{padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .run-item-left{display:flex;align-items:center;gap:16px}
+    .run-id{font-size:.7rem;color:#475569;width:28px}
+    .run-ts{font-size:.8rem}
+    .badge{display:inline-block;padding:2px 10px;border-radius:12px;font-size:.7rem;font-weight:700}
+    .badge-pass{background:#065f46;color:#34d399}
+    .badge-fail{background:#7f1d1d;color:#f87171}
+    .badge-lat{background:#1e1e30;color:#a78bfa;border:1px solid #4c1d95}
+    .run-detail{display:none;padding:0 16px 16px}
+    .run-item.active .run-detail{display:block}
+    .json-block{background:#060810;border:1px solid #2d2d50;border-radius:8px;padding:14px;font-family:monospace;font-size:.72rem;line-height:1.7;overflow-x:auto;white-space:pre;color:#8b9dc3;max-height:240px;overflow-y:auto}
+    .j-key{color:#79b8ff}.j-str{color:#9ecbff}.j-num{color:#f97583}.j-bool{color:#ffab70}.j-null{color:#475569}
+    .loading{padding:40px;text-align:center;color:#475569;font-size:.85rem}
+    .no-data{color:#475569;text-align:center;padding:40px;font-size:1rem}
+    .links{margin-top:20px;display:flex;gap:10px;flex-wrap:wrap}
+    .links a{color:#a78bfa;text-decoration:none;font-size:.83rem;border:1px solid #4c1d95;padding:6px 14px;border-radius:6px;transition:background .2s}
+    .links a:hover{background:#1e1e30}
+    .toast{position:fixed;bottom:28px;right:28px;padding:12px 20px;background:#1e1e30;border:1px solid #34d399;color:#34d399;border-radius:8px;font-size:.8rem;opacity:0;transform:translateY(8px);transition:all .3s;pointer-events:none}
+    .toast.show{opacity:1;transform:translateY(0)}
   </style>
 </head>
 <body>
-
 <header>
-  <div class="logo">JIKAN<span>/export</span></div>
-  <nav class="nav">
+  <div>
+    <h1>⬇ Export JSON</h1>
+    <span>API : https://api.jikan.moe/v4 &nbsp;·&nbsp; Hunter x Hunter (MAL id 11061)</span>
+  </div>
+  <div class="nav-links-header">
     <a href="/dashboard">Dashboard</a>
     <a href="/run-page">Run</a>
     <a href="/health">Health</a>
-  </nav>
+  </div>
 </header>
 
-<main>
+<div class="container">
 
-  <div class="hero">
-    <div class="hero-label">// data export</div>
-    <h1>EXPORT<br><span>JSON</span></h1>
-  </div>
-
-  <div class="stats-row">
-    <div class="stat">
-      <div class="stat-v" id="statTotal">—</div>
-      <div class="stat-l">Runs exportés</div>
-    </div>
-    <div class="stat">
-      <div class="stat-v" id="statPassed" style="color:var(--ok)">—</div>
-      <div class="stat-l">Tests passés (total)</div>
-    </div>
-    <div class="stat">
-      <div class="stat-v" id="statAvgLat" style="color:var(--warn)">—</div>
-      <div class="stat-l">Latence moy. globale</div>
-    </div>
+  <div class="section-title">📊 Statistiques globales</div>
+  <div class="kpi-grid">
+    <div class="kpi-card"><div class="value" id="statTotal">—</div><div class="label">Runs exportés</div></div>
+    <div class="kpi-card green"><div class="value" id="statPassed">—</div><div class="label">Tests passés</div></div>
+    <div class="kpi-card yellow"><div class="value" id="statAvgLat">—</div><div class="label">Latence moy. globale</div></div>
   </div>
 
   <div class="actions">
@@ -468,50 +89,47 @@
 
   <div class="filters">
     <span class="filter-label">Filtrer :</span>
-    <input class="search-input" id="searchInput" placeholder="Rechercher par date, statut..." oninput="filterRuns()"/>
-    <select class="filter-select" id="limitSelect" onchange="loadData()">
+    <input type="text" id="searchInput" placeholder="Rechercher par date, statut..." oninput="filterRuns()"/>
+    <select id="limitSelect" onchange="loadData()">
       <option value="20">20 derniers</option>
       <option value="50">50 derniers</option>
       <option value="100" selected>100 derniers</option>
     </select>
   </div>
 
-  <div class="json-panel">
-    <div class="json-panel-header">
-      <div class="json-panel-header-left">
-        <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
-        <div class="json-title">runs.json</div>
-      </div>
-      <div class="record-count"><span id="visibleCount">0</span> enregistrements</div>
-    </div>
-    <div class="runs-list" id="runsList">
-      <div id="loadingState"><span class="spinner"></span>Chargement des données...</div>
-      <div id="emptyState">Aucun run trouvé.</div>
+  <div class="section-title">📋 Historique des runs — <span id="visibleCount" style="color:#a78bfa">0</span> enregistrements</div>
+  <div class="runs-panel">
+    <div id="runsList">
+      <div class="loading" id="loadingState">Chargement des données...</div>
+      <div class="no-data" id="emptyState" style="display:none">Aucun run trouvé.</div>
     </div>
   </div>
 
-</main>
+  <div class="links">
+    <a href="/run-page">▶ Lancer un run</a>
+    <a href="/dashboard">📊 Dashboard</a>
+    <a href="/health">❤️ Health</a>
+  </div>
+
+</div>
 
 <div class="toast" id="toast">✔ Copié dans le presse-papiers</div>
 
 <script>
-  let allData = [];
-  let filtered = [];
+  let allData = [], filtered = [];
 
   async function loadData() {
-    const limit = document.getElementById('limitSelect').value;
     document.getElementById('loadingState').style.display = 'block';
     document.getElementById('emptyState').style.display = 'none';
     document.getElementById('runsList').querySelectorAll('.run-item').forEach(e => e.remove());
-
     try {
-      const res = await fetch(`/export`);
+      const res = await fetch('/export');
       allData = await res.json();
       filtered = [...allData];
       renderStats();
       filterRuns();
     } catch(e) {
-      document.getElementById('loadingState').innerHTML = `<span style="color:var(--error)">✖ Erreur : ${e.message}</span>`;
+      document.getElementById('loadingState').textContent = '✖ Erreur : ' + e.message;
     }
   }
 
@@ -520,16 +138,13 @@
     const totalPassed = allData.reduce((acc, r) => acc + (r.summary?.passed || 0), 0);
     document.getElementById('statPassed').textContent = totalPassed;
     const lats = allData.map(r => r.summary?.latency_ms_avg || 0).filter(v => v > 0);
-    const avgLat = lats.length ? Math.round(lats.reduce((a,b) => a+b, 0) / lats.length) : 0;
-    document.getElementById('statAvgLat').textContent = avgLat ? avgLat + 'ms' : '—';
+    const avg = lats.length ? Math.round(lats.reduce((a,b)=>a+b,0)/lats.length) : 0;
+    document.getElementById('statAvgLat').textContent = avg ? avg + 'ms' : '—';
   }
 
   function filterRuns() {
     const q = document.getElementById('searchInput').value.toLowerCase();
-    filtered = allData.filter(r => {
-      if (!q) return true;
-      return JSON.stringify(r).toLowerCase().includes(q);
-    });
+    filtered = allData.filter(r => !q || JSON.stringify(r).toLowerCase().includes(q));
     renderRuns();
   }
 
@@ -537,38 +152,28 @@
     const list = document.getElementById('runsList');
     list.querySelectorAll('.run-item').forEach(e => e.remove());
     document.getElementById('loadingState').style.display = 'none';
-
-    if (filtered.length === 0) {
-      document.getElementById('emptyState').style.display = 'block';
-      document.getElementById('visibleCount').textContent = 0;
-      return;
-    }
-
+    if (filtered.length === 0) { document.getElementById('emptyState').style.display = 'block'; document.getElementById('visibleCount').textContent = 0; return; }
     document.getElementById('emptyState').style.display = 'none';
     document.getElementById('visibleCount').textContent = filtered.length;
-
     filtered.forEach((run, i) => {
       const s = run.summary || {};
-      const ts = (run.timestamp || '').replace('T', ' ').slice(0, 19);
+      const ts = (run.timestamp || '').replace('T',' ').slice(0,19);
       const div = document.createElement('div');
       div.className = 'run-item';
       div.innerHTML = `
         <div class="run-item-header" onclick="toggleRun(this)">
           <div class="run-item-left">
-            <span class="run-id">#${run.id || i+1}</span>
+            <span class="run-id">#${run.id||i+1}</span>
             <span class="run-ts">${ts}</span>
-            <div class="run-badges">
-              <span class="badge badge-pass">✔ ${s.passed ?? '—'}</span>
-              ${(s.failed || 0) > 0 ? `<span class="badge badge-fail">✖ ${s.failed}</span>` : ''}
-              <span class="badge badge-lat">${s.latency_ms_avg ? Math.round(s.latency_ms_avg) + 'ms' : '—'}</span>
-            </div>
+            <span class="badge badge-pass">✔ ${s.passed??'—'}</span>
+            ${(s.failed||0)>0?`<span class="badge badge-fail">✖ ${s.failed}</span>`:''}
+            <span class="badge badge-lat">${s.latency_ms_avg?Math.round(s.latency_ms_avg)+'ms':'—'}</span>
           </div>
-          <span style="color:var(--muted);font-size:0.7rem">▼</span>
+          <span style="color:#475569;font-size:.75rem">▼</span>
         </div>
         <div class="run-detail">
           <div class="json-block">${syntaxHighlight(JSON.stringify(run, null, 2))}</div>
-        </div>
-      `;
+        </div>`;
       list.appendChild(div);
     });
   }
@@ -581,19 +186,18 @@
   }
 
   function syntaxHighlight(json) {
-    return json
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, match => {
-        let cls = 'j-num';
-        if (/^"/.test(match)) cls = /:$/.test(match) ? 'j-key' : 'j-str';
-        else if (/true|false/.test(match)) cls = 'j-bool';
-        else if (/null/.test(match)) cls = 'j-null';
-        return `<span class="${cls}">${match}</span>`;
+    return json.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, m => {
+        let c='j-num';
+        if(/^"/.test(m)) c=/:$/.test(m)?'j-key':'j-str';
+        else if(/true|false/.test(m)) c='j-bool';
+        else if(/null/.test(m)) c='j-null';
+        return `<span class="${c}">${m}</span>`;
       });
   }
 
   function downloadJSON() {
-    const blob = new Blob([JSON.stringify(filtered, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(filtered, null, 2)], {type:'application/json'});
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = `jikan-runs-${new Date().toISOString().slice(0,10)}.json`;
@@ -610,6 +214,5 @@
 
   loadData();
 </script>
-
 </body>
 </html>
