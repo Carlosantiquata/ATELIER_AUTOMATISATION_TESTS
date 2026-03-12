@@ -4,18 +4,18 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Health Check — Jikan API</title>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&family=Syne:wght@700;800&display=swap" rel="stylesheet"/>
   <style>
     :root {
       --bg: #080c10;
       --panel: #0d1117;
       --border: #1e2d3d;
       --ok: #00ff88;
-      --degraded: #ffb800;
       --error: #ff3b5c;
+      --warn: #ffb800;
+      --accent: #00c9ff;
       --text: #c9d1d9;
       --muted: #4a5568;
-      --accent: #00c9ff;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -27,33 +27,24 @@
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      overflow-x: hidden;
     }
 
-    /* Scanline effect */
     body::before {
       content: '';
       position: fixed;
       inset: 0;
-      background: repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 2px,
-        rgba(0,0,0,0.08) 2px,
-        rgba(0,0,0,0.08) 4px
-      );
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.07) 2px, rgba(0,0,0,0.07) 4px);
       pointer-events: none;
       z-index: 100;
     }
 
-    /* Grid bg */
     body::after {
       content: '';
       position: fixed;
       inset: 0;
       background-image:
-        linear-gradient(rgba(0, 201, 255, 0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0, 201, 255, 0.03) 1px, transparent 1px);
+        linear-gradient(rgba(0,201,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,201,255,0.025) 1px, transparent 1px);
       background-size: 40px 40px;
       pointer-events: none;
       z-index: 0;
@@ -62,185 +53,162 @@
     header {
       position: relative;
       z-index: 10;
-      padding: 20px 40px;
+      padding: 18px 40px;
       border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: rgba(13,17,23,0.9);
+      background: rgba(13,17,23,0.95);
       backdrop-filter: blur(10px);
     }
 
     .logo {
       font-family: 'Syne', sans-serif;
       font-weight: 800;
-      font-size: 1rem;
+      font-size: 0.9rem;
       letter-spacing: 0.2em;
       text-transform: uppercase;
       color: var(--accent);
     }
-
     .logo span { color: var(--muted); font-weight: 400; }
 
-    .timestamp {
-      font-size: 0.75rem;
+    .nav { display: flex; gap: 24px; }
+    .nav a {
+      font-size: 0.7rem;
       color: var(--muted);
+      text-decoration: none;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      transition: color 0.2s;
     }
-
-    .timestamp span { color: var(--ok); }
+    .nav a:hover { color: var(--accent); }
 
     main {
       position: relative;
       z-index: 10;
       flex: 1;
-      max-width: 860px;
-      margin: 60px auto;
+      max-width: 800px;
+      margin: 50px auto;
       padding: 0 24px;
       width: 100%;
     }
 
-    /* Big status display */
-    .status-hero {
-      display: flex;
-      align-items: center;
-      gap: 32px;
-      margin-bottom: 60px;
-      padding: 40px;
-      border: 1px solid var(--border);
-      background: var(--panel);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .status-hero::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0;
-      width: 4px;
-      height: 100%;
-      background: var(--status-color, var(--ok));
-    }
-
-    .status-hero::after {
-      content: attr(data-status);
-      position: absolute;
-      right: 32px;
-      top: 50%;
-      transform: translateY(-50%);
-      font-family: 'Syne', sans-serif;
-      font-weight: 800;
-      font-size: 5rem;
-      letter-spacing: -0.02em;
-      opacity: 0.04;
-      color: var(--status-color, var(--ok));
-      pointer-events: none;
-    }
-
-    .pulse-ring {
-      position: relative;
-      width: 64px;
-      height: 64px;
-      flex-shrink: 0;
-    }
-
-    .pulse-dot {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      background: var(--status-color, var(--ok));
-      position: absolute;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      box-shadow: 0 0 20px var(--status-color, var(--ok));
-    }
-
-    .pulse-dot::before,
-    .pulse-dot::after {
-      content: '';
-      position: absolute;
-      inset: -8px;
-      border-radius: 50%;
-      border: 2px solid var(--status-color, var(--ok));
-      opacity: 0;
-      animation: pulse 2s ease-out infinite;
-    }
-
-    .pulse-dot::after { animation-delay: 0.7s; }
-
-    @keyframes pulse {
-      0% { transform: scale(0.8); opacity: 0.8; }
-      100% { transform: scale(2.2); opacity: 0; }
-    }
-
-    .status-info h1 {
-      font-family: 'Syne', sans-serif;
-      font-weight: 800;
-      font-size: 2.2rem;
-      color: var(--status-color, var(--ok));
-      letter-spacing: -0.02em;
-      line-height: 1;
-      margin-bottom: 8px;
-    }
-
-    .status-info p {
-      font-size: 0.8rem;
-      color: var(--muted);
-      line-height: 1.6;
-      max-width: 420px;
-    }
-
-    /* Metrics grid */
-    .metrics {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
+    .hero {
       margin-bottom: 40px;
+      opacity: 0;
+      animation: fadeUp 0.5s ease forwards 0.1s;
     }
 
-    @media (max-width: 600px) { .metrics { grid-template-columns: 1fr; } }
-
-    .metric-card {
-      padding: 24px;
-      border: 1px solid var(--border);
-      background: var(--panel);
-      position: relative;
-      transition: border-color 0.2s;
-    }
-
-    .metric-card:hover { border-color: var(--accent); }
-
-    .metric-label {
+    .hero-label {
       font-size: 0.65rem;
-      letter-spacing: 0.15em;
+      letter-spacing: 0.2em;
       text-transform: uppercase;
       color: var(--muted);
       margin-bottom: 12px;
     }
 
-    .metric-value {
+    .hero h1 {
       font-family: 'Syne', sans-serif;
       font-weight: 800;
-      font-size: 1.8rem;
+      font-size: 2.8rem;
+      letter-spacing: -0.03em;
       color: var(--text);
-      letter-spacing: -0.02em;
+      line-height: 1;
     }
 
-    .metric-value.ok { color: var(--ok); }
-    .metric-value.warn { color: var(--degraded); }
-    .metric-value.bad { color: var(--error); }
+    .hero h1 span { color: var(--accent); }
 
-    .metric-sub {
-      font-size: 0.7rem;
-      color: var(--muted);
-      margin-top: 4px;
+    /* Status zone */
+    .status-zone {
+      margin-bottom: 40px;
+      opacity: 0;
+      animation: fadeUp 0.5s ease forwards 0.2s;
     }
 
-    /* Terminal log */
+    .status-box {
+      width: 100%;
+      padding: 28px;
+      background: transparent;
+      border: 1px solid var(--ok);
+      color: var(--ok);
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.4rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .status-box.degraded { border-color: var(--warn); color: var(--warn); }
+    .status-box.error { border-color: var(--error); color: var(--error); }
+
+    .pulse-dot {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--ok);
+      flex-shrink: 0;
+      box-shadow: 0 0 12px var(--ok);
+      position: relative;
+    }
+
+    .pulse-dot::after {
+      content: '';
+      position: absolute;
+      inset: -6px;
+      border-radius: 50%;
+      border: 2px solid var(--ok);
+      opacity: 0;
+      animation: pulse 2s ease-out infinite;
+    }
+
+    .status-box.degraded .pulse-dot { background: var(--warn); box-shadow: 0 0 12px var(--warn); }
+    .status-box.degraded .pulse-dot::after { border-color: var(--warn); }
+    .status-box.error .pulse-dot { background: var(--error); box-shadow: 0 0 12px var(--error); }
+    .status-box.error .pulse-dot::after { border-color: var(--error); }
+
+    @keyframes pulse {
+      0% { transform: scale(0.8); opacity: 0.8; }
+      100% { transform: scale(2.4); opacity: 0; }
+    }
+
+    /* Progress bar fake */
+    .progress-wrap {
+      height: 2px;
+      background: var(--border);
+      margin-bottom: 40px;
+      overflow: hidden;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .progress-wrap.visible { opacity: 1; }
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), var(--ok));
+      transition: width 0.4s ease;
+      box-shadow: 0 0 10px var(--ok);
+    }
+    .progress-bar.indeterminate {
+      width: 40%;
+      animation: slide 1s ease-in-out infinite;
+    }
+    @keyframes slide {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(300%); }
+    }
+
+    /* Terminal */
     .terminal {
       border: 1px solid var(--border);
-      background: #060a0e;
-      padding: 0;
+      background: #050810;
       margin-bottom: 40px;
+      opacity: 0;
+      animation: fadeUp 0.5s ease forwards 0.3s;
     }
 
     .terminal-header {
@@ -249,7 +217,7 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      background: #0a0e14;
+      background: #080c12;
     }
 
     .dot { width: 10px; height: 10px; border-radius: 50%; }
@@ -257,88 +225,75 @@
     .dot.y { background: #ffbd2e; }
     .dot.g { background: #27c93f; }
 
-    .terminal-title {
-      font-size: 0.7rem;
-      color: var(--muted);
-      margin-left: 8px;
-    }
+    .terminal-title { font-size: 0.7rem; color: var(--muted); margin-left: 8px; }
 
     .terminal-body {
       padding: 20px;
       font-size: 0.78rem;
-      line-height: 2;
+      line-height: 1.9;
+      min-height: 120px;
+      max-height: 280px;
+      overflow-y: auto;
     }
 
-    .log-line { display: flex; gap: 16px; }
-    .log-time { color: var(--muted); flex-shrink: 0; }
-    .log-level { flex-shrink: 0; width: 60px; }
-    .log-level.info { color: var(--accent); }
-    .log-level.ok { color: var(--ok); }
-    .log-level.warn { color: var(--degraded); }
-    .log-msg { color: var(--text); }
+    .log { display: flex; gap: 12px; align-items: flex-start; }
+    .log-t { color: var(--muted); flex-shrink: 0; font-size: 0.7rem; padding-top: 2px; }
+    .log-m { flex: 1; }
+    .log-m.ok { color: var(--ok); }
+    .log-m.err { color: var(--error); }
+    .log-m.warn { color: var(--warn); }
+    .log-m.dim { color: var(--muted); }
+    .log-m.accent { color: var(--accent); }
 
     .cursor {
       display: inline-block;
-      width: 8px;
-      height: 14px;
+      width: 7px; height: 13px;
       background: var(--ok);
       animation: blink 1s step-end infinite;
       vertical-align: middle;
     }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
 
-    @keyframes blink {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0; }
-    }
-
-    /* Navigation */
-    .nav-links {
-      display: flex;
+    /* KPI row */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
       gap: 12px;
-      flex-wrap: wrap;
-    }
-
-    .nav-link {
-      padding: 10px 20px;
-      border: 1px solid var(--border);
-      color: var(--muted);
-      text-decoration: none;
-      font-size: 0.75rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      transition: all 0.2s;
-      background: var(--panel);
-    }
-
-    .nav-link:hover {
-      border-color: var(--accent);
-      color: var(--accent);
-      background: rgba(0, 201, 255, 0.05);
-    }
-
-    .nav-link.primary {
-      border-color: var(--ok);
-      color: var(--ok);
-      background: rgba(0, 255, 136, 0.05);
-    }
-
-    .nav-link.primary:hover {
-      background: rgba(0, 255, 136, 0.12);
-    }
-
-    /* Animated entry */
-    .fade-in {
+      margin-bottom: 40px;
       opacity: 0;
-      transform: translateY(16px);
-      animation: fadeIn 0.5s ease forwards;
+      animation: fadeUp 0.5s ease forwards 0.25s;
     }
 
-    .fade-in:nth-child(1) { animation-delay: 0.1s; }
-    .fade-in:nth-child(2) { animation-delay: 0.2s; }
-    .fade-in:nth-child(3) { animation-delay: 0.3s; }
-    .fade-in:nth-child(4) { animation-delay: 0.4s; }
+    @media(max-width:600px) { .kpi-row { grid-template-columns: 1fr; } }
 
-    @keyframes fadeIn {
+    .kpi {
+      padding: 16px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      text-align: center;
+    }
+
+    .kpi-v {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.6rem;
+      letter-spacing: -0.02em;
+    }
+
+    .kpi-v.ok { color: var(--ok); }
+    .kpi-v.warn { color: var(--warn); }
+    .kpi-v.info { color: var(--accent); }
+
+    .kpi-l {
+      font-size: 0.62rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
       to { opacity: 1; transform: translateY(0); }
     }
   </style>
@@ -347,154 +302,119 @@
 
 <header>
   <div class="logo">JIKAN<span>/health</span></div>
-  <div class="timestamp">SYS_TIME: <span id="clock">--:--:--</span></div>
+  <nav class="nav">
+    <a href="/dashboard">Dashboard</a>
+    <a href="/run-page">Run</a>
+    <a href="/export-page">Export</a>
+  </nav>
 </header>
 
 <main>
 
-  <!-- Statut principal -->
-  <div class="status-hero fade-in" id="statusHero" data-status="OK">
-    <div class="pulse-ring">
+  <div class="hero">
+    <div class="hero-label">// health check</div>
+    <h1>ÉTAT DU<br><span>SYSTÈME</span></h1>
+  </div>
+
+  <div class="status-zone">
+    <div class="status-box" id="statusBox">
       <div class="pulse-dot" id="pulseDot"></div>
-    </div>
-    <div class="status-info">
-      <h1 id="statusTitle">OPERATIONAL</h1>
-      <p id="statusMsg">Chargement des données de santé...</p>
+      <span id="statusText">Chargement...</span>
     </div>
   </div>
 
-  <!-- Métriques -->
-  <div class="metrics fade-in">
-    <div class="metric-card">
-      <div class="metric-label">Disponibilité</div>
-      <div class="metric-value ok" id="metricAvail">—</div>
-      <div class="metric-sub">dernier run</div>
-    </div>
-    <div class="metric-card">
-      <div class="metric-label">Base de données</div>
-      <div class="metric-value ok" id="metricDb">—</div>
-      <div class="metric-sub">moteur de stockage</div>
-    </div>
-    <div class="metric-card">
-      <div class="metric-label">API surveillée</div>
-      <div class="metric-value" id="metricApi" style="font-size:1.1rem">—</div>
-      <div class="metric-sub">source de données</div>
-    </div>
+  <div class="progress-wrap visible" id="progressWrap">
+    <div class="progress-bar indeterminate" id="progressBar"></div>
   </div>
 
-  <!-- Terminal log -->
-  <div class="terminal fade-in">
+  <div class="kpi-row">
+    <div class="kpi"><div class="kpi-v ok" id="kpiAvail">—</div><div class="kpi-l">Disponibilité</div></div>
+    <div class="kpi"><div class="kpi-v info" id="kpiDb">—</div><div class="kpi-l">Base de données</div></div>
+    <div class="kpi"><div class="kpi-v info" id="kpiApi" style="font-size:1rem">—</div><div class="kpi-l">API surveillée</div></div>
+  </div>
+
+  <div class="terminal">
     <div class="terminal-header">
-      <div class="dot r"></div>
-      <div class="dot y"></div>
-      <div class="dot g"></div>
-      <div class="terminal-title">health.log — système de monitoring</div>
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <div class="terminal-title">health.log</div>
     </div>
-    <div class="terminal-body" id="termLog">
-      <div class="log-line">
-        <span class="log-time" id="t1">...</span>
-        <span class="log-level info">INFO</span>
-        <span class="log-msg">Connexion au endpoint /health...</span>
-      </div>
-      <div class="log-line">
-        <span class="log-time" id="t2">...</span>
-        <span class="log-level info">INFO</span>
-        <span class="log-msg">Lecture de la base SQLite...</span>
-      </div>
-      <div class="log-line" id="logStatus">
-        <span class="log-time" id="t3">...</span>
-        <span class="log-level ok" id="logLevel">OK</span>
-        <span class="log-msg" id="logMsg">—</span>
-      </div>
-      <div class="log-line">
-        <span class="log-time" id="t4">...</span>
-        <span class="log-level info">INFO</span>
-        <span class="log-msg">Réponse prête. <span class="cursor"></span></span>
+    <div class="terminal-body" id="termBody">
+      <div class="log">
+        <span class="log-t" id="initTime"></span>
+        <span class="log-m dim">Connexion au endpoint /health... <span class="cursor"></span></span>
       </div>
     </div>
-  </div>
-
-  <!-- Navigation -->
-  <div class="nav-links fade-in">
-    <a href="/dashboard" class="nav-link primary">▶ Dashboard</a>
-    <a href="/run" class="nav-link">⚡ Run tests</a>
-    <a href="/export" class="nav-link">⬇ Export JSON</a>
   </div>
 
 </main>
 
 <script>
-  // Horloge
-  function updateClock() {
-    document.getElementById('clock').textContent =
-      new Date().toLocaleTimeString('fr-FR');
-  }
-  updateClock();
-  setInterval(updateClock, 1000);
+  document.getElementById('initTime').textContent = new Date().toLocaleTimeString('fr-FR');
 
-  // Temps de log simulés
-  function logTime() {
-    return new Date().toLocaleTimeString('fr-FR');
+  function t() { return new Date().toLocaleTimeString('fr-FR'); }
+
+  function addLog(msg, cls = '') {
+    const body = document.getElementById('termBody');
+    const idle = body.querySelector('.log-m.dim');
+    if (idle) idle.closest('.log')?.remove();
+    const div = document.createElement('div');
+    div.className = 'log';
+    div.innerHTML = `<span class="log-t">${t()}</span><span class="log-m ${cls}">${msg}</span>`;
+    body.appendChild(div);
+    body.scrollTop = body.scrollHeight;
   }
 
-  // Fetch /health
   async function loadHealth() {
-    document.getElementById('t1').textContent = logTime();
-
     try {
-      const res = await fetch('/health');
-      document.getElementById('t2').textContent = logTime();
-
+      const res = await fetch('/health', { headers: { 'Accept': 'application/json' } });
       const data = await res.json();
-      document.getElementById('t3').textContent = logTime();
-      document.getElementById('t4').textContent = logTime();
+
+      // Progress done
+      const pb = document.getElementById('progressBar');
+      pb.className = 'progress-bar';
+      pb.style.width = '100%';
+      setTimeout(() => { document.getElementById('progressWrap').classList.remove('visible'); }, 600);
 
       const status = data.status || 'ok';
-      const hero = document.getElementById('statusHero');
+      const box = document.getElementById('statusBox');
       const dot = document.getElementById('pulseDot');
-      const title = document.getElementById('statusTitle');
-      const msg = document.getElementById('statusMsg');
-      const logLevel = document.getElementById('logLevel');
-      const logMsg = document.getElementById('logMsg');
+      const txt = document.getElementById('statusText');
 
-      const colorMap = { ok: '#00ff88', degraded: '#ffb800', error: '#ff3b5c' };
-      const labelMap = { ok: 'OPERATIONAL', degraded: 'DEGRADED', error: 'INCIDENT' };
-      const color = colorMap[status] || colorMap.ok;
-
-      hero.style.setProperty('--status-color', color);
-      hero.setAttribute('data-status', labelMap[status] || 'OK');
-      dot.style.background = color;
-      dot.style.boxShadow = `0 0 20px ${color}`;
-      title.style.color = color;
-      title.textContent = labelMap[status] || 'OPERATIONAL';
-      msg.textContent = data.message || 'Service opérationnel.';
-
-      // Métriques
-      const availMatch = (data.message || '').match(/disponibilité=([\d.]+)%/);
-      if (availMatch) {
-        const avail = parseFloat(availMatch[1]);
-        const el = document.getElementById('metricAvail');
-        el.textContent = avail + '%';
-        el.className = 'metric-value ' + (avail >= 90 ? 'ok' : avail >= 70 ? 'warn' : 'bad');
+      if (status === 'ok') {
+        box.className = 'status-box';
+        txt.textContent = '✔ OPERATIONAL';
+        addLog('✔ Statut : OPERATIONAL', 'ok');
+      } else if (status === 'degraded') {
+        box.className = 'status-box degraded';
+        txt.textContent = '⚠ DEGRADED';
+        addLog('⚠ Statut : DEGRADED', 'warn');
       } else {
-        document.getElementById('metricAvail').textContent = '—';
+        box.className = 'status-box error';
+        txt.textContent = '✖ INCIDENT';
+        addLog('✖ Statut : INCIDENT', 'err');
       }
 
-      document.getElementById('metricDb').textContent = (data.db || 'sqlite').toUpperCase();
-      document.getElementById('metricApi').textContent = data.api || '—';
+      addLog(data.message || '—', 'dim');
 
-      // Log terminal
-      logLevel.textContent = status.toUpperCase();
-      logLevel.className = 'log-level ' + (status === 'ok' ? 'ok' : 'warn');
-      logMsg.textContent = data.message || 'Statut récupéré avec succès.';
+      // KPIs
+      const availMatch = (data.message || '').match(/disponibilité=([\d.]+)%/);
+      if (availMatch) {
+        const v = parseFloat(availMatch[1]);
+        document.getElementById('kpiAvail').textContent = v + '%';
+        document.getElementById('kpiAvail').className = 'kpi-v ' + (v >= 90 ? 'ok' : 'warn');
+      } else {
+        document.getElementById('kpiAvail').textContent = '—';
+      }
 
-    } catch (e) {
-      document.getElementById('statusTitle').textContent = 'UNREACHABLE';
-      document.getElementById('statusTitle').style.color = '#ff3b5c';
-      document.getElementById('statusMsg').textContent = 'Impossible de joindre le endpoint /health : ' + e.message;
-      document.getElementById('logLevel').textContent = 'ERROR';
-      document.getElementById('logLevel').className = 'log-level warn';
-      document.getElementById('logMsg').textContent = e.message;
+      document.getElementById('kpiDb').textContent = (data.db || 'sqlite').toUpperCase();
+      document.getElementById('kpiApi').textContent = data.api || '—';
+
+      addLog('Réponse reçue. <span class="cursor"></span>', 'dim');
+
+    } catch(e) {
+      document.getElementById('statusBox').className = 'status-box error';
+      document.getElementById('statusText').textContent = '✖ UNREACHABLE';
+      addLog('✖ Erreur : ' + e.message, 'err');
     }
   }
 
