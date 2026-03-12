@@ -3,357 +3,99 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Health Check — Jikan API</title>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&family=Syne:wght@700;800&display=swap" rel="stylesheet"/>
+  <title>Health — Jikan API</title>
   <style>
-    :root {
-      --bg: #080c10;
-      --panel: #0d1117;
-      --border: #1e2d3d;
-      --ok: #00ff88;
-      --error: #ff3b5c;
-      --warn: #ffb800;
-      --accent: #00c9ff;
-      --text: #c9d1d9;
-      --muted: #4a5568;
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'JetBrains Mono', monospace;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.07) 2px, rgba(0,0,0,0.07) 4px);
-      pointer-events: none;
-      z-index: 100;
-    }
-
-    body::after {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image:
-        linear-gradient(rgba(0,201,255,0.025) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0,201,255,0.025) 1px, transparent 1px);
-      background-size: 40px 40px;
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    header {
-      position: relative;
-      z-index: 10;
-      padding: 18px 40px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: rgba(13,17,23,0.95);
-      backdrop-filter: blur(10px);
-    }
-
-    .logo {
-      font-family: 'Syne', sans-serif;
-      font-weight: 800;
-      font-size: 0.9rem;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: var(--accent);
-    }
-    .logo span { color: var(--muted); font-weight: 400; }
-
-    .nav { display: flex; gap: 24px; }
-    .nav a {
-      font-size: 0.7rem;
-      color: var(--muted);
-      text-decoration: none;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      transition: color 0.2s;
-    }
-    .nav a:hover { color: var(--accent); }
-
-    main {
-      position: relative;
-      z-index: 10;
-      flex: 1;
-      max-width: 800px;
-      margin: 50px auto;
-      padding: 0 24px;
-      width: 100%;
-    }
-
-    .hero {
-      margin-bottom: 40px;
-      opacity: 0;
-      animation: fadeUp 0.5s ease forwards 0.1s;
-    }
-
-    .hero-label {
-      font-size: 0.65rem;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 12px;
-    }
-
-    .hero h1 {
-      font-family: 'Syne', sans-serif;
-      font-weight: 800;
-      font-size: 2.8rem;
-      letter-spacing: -0.03em;
-      color: var(--text);
-      line-height: 1;
-    }
-
-    .hero h1 span { color: var(--accent); }
-
-    /* Status zone */
-    .status-zone {
-      margin-bottom: 40px;
-      opacity: 0;
-      animation: fadeUp 0.5s ease forwards 0.2s;
-    }
-
-    .status-box {
-      width: 100%;
-      padding: 28px;
-      background: transparent;
-      border: 1px solid var(--ok);
-      color: var(--ok);
-      font-family: 'Syne', sans-serif;
-      font-weight: 800;
-      font-size: 1.4rem;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      position: relative;
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      gap: 20px;
-    }
-
-    .status-box.degraded { border-color: var(--warn); color: var(--warn); }
-    .status-box.error { border-color: var(--error); color: var(--error); }
-
-    .pulse-dot {
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      background: var(--ok);
-      flex-shrink: 0;
-      box-shadow: 0 0 12px var(--ok);
-      position: relative;
-    }
-
-    .pulse-dot::after {
-      content: '';
-      position: absolute;
-      inset: -6px;
-      border-radius: 50%;
-      border: 2px solid var(--ok);
-      opacity: 0;
-      animation: pulse 2s ease-out infinite;
-    }
-
-    .status-box.degraded .pulse-dot { background: var(--warn); box-shadow: 0 0 12px var(--warn); }
-    .status-box.degraded .pulse-dot::after { border-color: var(--warn); }
-    .status-box.error .pulse-dot { background: var(--error); box-shadow: 0 0 12px var(--error); }
-    .status-box.error .pulse-dot::after { border-color: var(--error); }
-
-    @keyframes pulse {
-      0% { transform: scale(0.8); opacity: 0.8; }
-      100% { transform: scale(2.4); opacity: 0; }
-    }
-
-    /* Progress bar fake */
-    .progress-wrap {
-      height: 2px;
-      background: var(--border);
-      margin-bottom: 40px;
-      overflow: hidden;
-      opacity: 0;
-      transition: opacity 0.3s;
-    }
-    .progress-wrap.visible { opacity: 1; }
-    .progress-bar {
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(90deg, var(--accent), var(--ok));
-      transition: width 0.4s ease;
-      box-shadow: 0 0 10px var(--ok);
-    }
-    .progress-bar.indeterminate {
-      width: 40%;
-      animation: slide 1s ease-in-out infinite;
-    }
-    @keyframes slide {
-      0% { transform: translateX(-100%); }
-      100% { transform: translateX(300%); }
-    }
-
-    /* Terminal */
-    .terminal {
-      border: 1px solid var(--border);
-      background: #050810;
-      margin-bottom: 40px;
-      opacity: 0;
-      animation: fadeUp 0.5s ease forwards 0.3s;
-    }
-
-    .terminal-header {
-      padding: 10px 20px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: #080c12;
-    }
-
-    .dot { width: 10px; height: 10px; border-radius: 50%; }
-    .dot.r { background: #ff5f56; }
-    .dot.y { background: #ffbd2e; }
-    .dot.g { background: #27c93f; }
-
-    .terminal-title { font-size: 0.7rem; color: var(--muted); margin-left: 8px; }
-
-    .terminal-body {
-      padding: 20px;
-      font-size: 0.78rem;
-      line-height: 1.9;
-      min-height: 120px;
-      max-height: 280px;
-      overflow-y: auto;
-    }
-
-    .log { display: flex; gap: 12px; align-items: flex-start; }
-    .log-t { color: var(--muted); flex-shrink: 0; font-size: 0.7rem; padding-top: 2px; }
-    .log-m { flex: 1; }
-    .log-m.ok { color: var(--ok); }
-    .log-m.err { color: var(--error); }
-    .log-m.warn { color: var(--warn); }
-    .log-m.dim { color: var(--muted); }
-    .log-m.accent { color: var(--accent); }
-
-    .cursor {
-      display: inline-block;
-      width: 7px; height: 13px;
-      background: var(--ok);
-      animation: blink 1s step-end infinite;
-      vertical-align: middle;
-    }
-    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
-
-    /* KPI row */
-    .kpi-row {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-      margin-bottom: 40px;
-      opacity: 0;
-      animation: fadeUp 0.5s ease forwards 0.25s;
-    }
-
-    @media(max-width:600px) { .kpi-row { grid-template-columns: 1fr; } }
-
-    .kpi {
-      padding: 16px;
-      border: 1px solid var(--border);
-      background: var(--panel);
-      text-align: center;
-    }
-
-    .kpi-v {
-      font-family: 'Syne', sans-serif;
-      font-weight: 800;
-      font-size: 1.6rem;
-      letter-spacing: -0.02em;
-    }
-
-    .kpi-v.ok { color: var(--ok); }
-    .kpi-v.warn { color: var(--warn); }
-    .kpi-v.info { color: var(--accent); }
-
-    .kpi-l {
-      font-size: 0.62rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-top: 4px;
-    }
-
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(16px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',sans-serif;background:#0f0f1a;color:#e0e0f0;min-height:100vh}
+    header{background:linear-gradient(135deg,#1a1a2e,#16213e);padding:20px 32px;border-bottom:2px solid #7c3aed;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+    header h1{font-size:1.4rem;color:#a78bfa}
+    header span{font-size:0.82rem;color:#94a3b8}
+    .nav-links-header{display:flex;gap:12px}
+    .nav-links-header a{color:#a78bfa;text-decoration:none;font-size:.85rem;border:1px solid #4c1d95;padding:8px 16px;border-radius:8px;transition:background .2s}
+    .nav-links-header a:hover{background:#1e1e30}
+    .container{max-width:900px;margin:0 auto;padding:24px 20px}
+    .section-title{font-size:1rem;color:#a78bfa;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid #2d2d50}
+    .kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:28px}
+    .kpi-card{background:#1e1e30;border:1px solid #2d2d50;border-radius:12px;padding:16px 18px;text-align:center}
+    .kpi-card .value{font-size:1.9rem;font-weight:700;color:#a78bfa}
+    .kpi-card .label{font-size:.75rem;color:#94a3b8;margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
+    .kpi-card.green .value{color:#34d399}
+    .kpi-card.red .value{color:#f87171}
+    .kpi-card.yellow .value{color:#fbbf24}
+    .status-banner{border-radius:12px;padding:20px 24px;margin-bottom:28px;display:flex;align-items:center;gap:16px;font-size:1.1rem;font-weight:700}
+    .status-banner.ok{background:#065f4622;border:1px solid #34d399;color:#34d399}
+    .status-banner.degraded{background:#78350f22;border:1px solid #fbbf24;color:#fbbf24}
+    .status-banner.error{background:#7f1d1d22;border:1px solid #f87171;color:#f87171}
+    .pulse{width:14px;height:14px;border-radius:50%;flex-shrink:0}
+    .pulse.ok{background:#34d399;box-shadow:0 0 10px #34d399}
+    .pulse.degraded{background:#fbbf24;box-shadow:0 0 10px #fbbf24}
+    .pulse.error{background:#f87171;box-shadow:0 0 10px #f87171}
+    .terminal{background:#0a0a1a;border:1px solid #2d2d50;border-radius:10px;margin-bottom:28px;overflow:hidden}
+    .terminal-header{background:#16213e;padding:10px 16px;display:flex;align-items:center;gap:8px}
+    .dot{width:10px;height:10px;border-radius:50%}
+    .dot.r{background:#ff5f56}.dot.y{background:#ffbd2e}.dot.g{background:#27c93f}
+    .terminal-title{font-size:.75rem;color:#64748b;margin-left:8px;font-family:monospace}
+    .terminal-body{padding:16px;font-family:monospace;font-size:.78rem;line-height:1.9;min-height:80px}
+    .log{display:flex;gap:12px}
+    .log-t{color:#475569;flex-shrink:0}
+    .log-m.ok{color:#34d399}.log-m.warn{color:#fbbf24}.log-m.err{color:#f87171}.log-m.dim{color:#475569}.log-m.accent{color:#a78bfa}
+    .cursor{display:inline-block;width:7px;height:13px;background:#34d399;animation:blink 1s step-end infinite;vertical-align:middle}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+    .links{margin-top:20px;display:flex;gap:10px;flex-wrap:wrap}
+    .links a{color:#a78bfa;text-decoration:none;font-size:.83rem;border:1px solid #4c1d95;padding:6px 14px;border-radius:6px;transition:background .2s}
+    .links a:hover{background:#1e1e30}
   </style>
 </head>
 <body>
-
 <header>
-  <div class="logo">JIKAN<span>/health</span></div>
-  <nav class="nav">
+  <div>
+    <h1>❤️ Health Check</h1>
+    <span>API : https://api.jikan.moe/v4 &nbsp;·&nbsp; Hunter x Hunter (MAL id 11061)</span>
+  </div>
+  <div class="nav-links-header">
     <a href="/dashboard">Dashboard</a>
     <a href="/run-page">Run</a>
     <a href="/export-page">Export</a>
-  </nav>
+  </div>
 </header>
 
-<main>
+<div class="container">
 
-  <div class="hero">
-    <div class="hero-label">// health check</div>
-    <h1>ÉTAT DU<br><span>SYSTÈME</span></h1>
+  <div class="status-banner ok" id="statusBanner">
+    <div class="pulse ok" id="pulseDot"></div>
+    <span id="statusText">Chargement...</span>
   </div>
 
-  <div class="status-zone">
-    <div class="status-box" id="statusBox">
-      <div class="pulse-dot" id="pulseDot"></div>
-      <span id="statusText">Chargement...</span>
-    </div>
+  <div class="section-title">📊 Métriques</div>
+  <div class="kpi-grid">
+    <div class="kpi-card green"><div class="value" id="kpiAvail">—</div><div class="label">Disponibilité</div></div>
+    <div class="kpi-card"><div class="value" id="kpiDb" style="color:#a78bfa">—</div><div class="label">Base de données</div></div>
+    <div class="kpi-card"><div class="value" id="kpiApi" style="color:#a78bfa;font-size:1.1rem">—</div><div class="label">API surveillée</div></div>
   </div>
 
-  <div class="progress-wrap visible" id="progressWrap">
-    <div class="progress-bar indeterminate" id="progressBar"></div>
-  </div>
-
-  <div class="kpi-row">
-    <div class="kpi"><div class="kpi-v ok" id="kpiAvail">—</div><div class="kpi-l">Disponibilité</div></div>
-    <div class="kpi"><div class="kpi-v info" id="kpiDb">—</div><div class="kpi-l">Base de données</div></div>
-    <div class="kpi"><div class="kpi-v info" id="kpiApi" style="font-size:1rem">—</div><div class="kpi-l">API surveillée</div></div>
-  </div>
-
+  <div class="section-title">🖥️ Logs</div>
   <div class="terminal">
     <div class="terminal-header">
       <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
       <div class="terminal-title">health.log</div>
     </div>
     <div class="terminal-body" id="termBody">
-      <div class="log">
-        <span class="log-t" id="initTime"></span>
-        <span class="log-m dim">Connexion au endpoint /health... <span class="cursor"></span></span>
-      </div>
+      <div class="log"><span class="log-t" id="initTime"></span><span class="log-m dim">Connexion au endpoint /health... <span class="cursor"></span></span></div>
     </div>
   </div>
 
-</main>
+  <div class="links">
+    <a href="/run-page">▶ Lancer un run</a>
+    <a href="/dashboard">📊 Dashboard</a>
+    <a href="/export-page">⬇ Export JSON</a>
+  </div>
+
+</div>
 
 <script>
   document.getElementById('initTime').textContent = new Date().toLocaleTimeString('fr-FR');
-
   function t() { return new Date().toLocaleTimeString('fr-FR'); }
-
-  function addLog(msg, cls = '') {
+  function addLog(msg, cls='') {
     const body = document.getElementById('termBody');
     const idle = body.querySelector('.log-m.dim');
     if (idle) idle.closest('.log')?.remove();
@@ -361,65 +103,55 @@
     div.className = 'log';
     div.innerHTML = `<span class="log-t">${t()}</span><span class="log-m ${cls}">${msg}</span>`;
     body.appendChild(div);
-    body.scrollTop = body.scrollHeight;
   }
 
   async function loadHealth() {
     try {
       const res = await fetch('/health', { headers: { 'Accept': 'application/json' } });
       const data = await res.json();
-
-      // Progress done
-      const pb = document.getElementById('progressBar');
-      pb.className = 'progress-bar';
-      pb.style.width = '100%';
-      setTimeout(() => { document.getElementById('progressWrap').classList.remove('visible'); }, 600);
-
       const status = data.status || 'ok';
-      const box = document.getElementById('statusBox');
+      const banner = document.getElementById('statusBanner');
       const dot = document.getElementById('pulseDot');
       const txt = document.getElementById('statusText');
 
       if (status === 'ok') {
-        box.className = 'status-box';
-        txt.textContent = '✔ OPERATIONAL';
+        banner.className = 'status-banner ok';
+        dot.className = 'pulse ok';
+        txt.textContent = '✔ OPERATIONAL — Tous les systèmes fonctionnent normalement';
         addLog('✔ Statut : OPERATIONAL', 'ok');
       } else if (status === 'degraded') {
-        box.className = 'status-box degraded';
-        txt.textContent = '⚠ DEGRADED';
+        banner.className = 'status-banner degraded';
+        dot.className = 'pulse degraded';
+        txt.textContent = '⚠ DEGRADED — Performance réduite détectée';
         addLog('⚠ Statut : DEGRADED', 'warn');
       } else {
-        box.className = 'status-box error';
-        txt.textContent = '✖ INCIDENT';
+        banner.className = 'status-banner error';
+        dot.className = 'pulse error';
+        txt.textContent = '✖ INCIDENT — Problème détecté';
         addLog('✖ Statut : INCIDENT', 'err');
       }
 
       addLog(data.message || '—', 'dim');
 
-      // KPIs
       const availMatch = (data.message || '').match(/disponibilité=([\d.]+)%/);
       if (availMatch) {
         const v = parseFloat(availMatch[1]);
         document.getElementById('kpiAvail').textContent = v + '%';
-        document.getElementById('kpiAvail').className = 'kpi-v ' + (v >= 90 ? 'ok' : 'warn');
+        document.getElementById('kpiAvail').parentElement.className = 'kpi-card ' + (v >= 90 ? 'green' : 'yellow');
       } else {
         document.getElementById('kpiAvail').textContent = '—';
       }
-
       document.getElementById('kpiDb').textContent = (data.db || 'sqlite').toUpperCase();
       document.getElementById('kpiApi').textContent = data.api || '—';
-
-      addLog('Réponse reçue. <span class="cursor"></span>', 'dim');
+      addLog('Réponse reçue.', 'dim');
 
     } catch(e) {
-      document.getElementById('statusBox').className = 'status-box error';
+      document.getElementById('statusBanner').className = 'status-banner error';
       document.getElementById('statusText').textContent = '✖ UNREACHABLE';
       addLog('✖ Erreur : ' + e.message, 'err');
     }
   }
-
   loadHealth();
 </script>
-
 </body>
 </html>
