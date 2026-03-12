@@ -80,9 +80,11 @@ def health():
         return jsonify({"status": status, "message": message, "db": "sqlite", "api": "Jikan (MyAnimeList)"})
     return render_template("health.html")
 
-@app.route("/export")
-def export():
-    return jsonify(storage.list_runs(limit=100))
-
+@app.route("/export-page")
+def export_page():
+    return render_template("export.html")
+@app.route("/export-page")
+def export_page():
+    return render_template("export.html")
 if __name__ == "__main__":
     app.run(debug=True)
