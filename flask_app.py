@@ -56,14 +56,12 @@ def dashboard():
         chart_labels=chart_labels, chart_latency=chart_latency, chart_errors=chart_errors)
 @app.route("/health")
 def health():
-    runs = storage.list_runs(limit=1)
-    last = runs[0] if runs else None
-    status, message = "ok", "Aucun run enregistré."
-    if last:
-        avail = last.get("summary", {}).get("availability", 0)
-        message = f"Dernier run : {(last.get('timestamp') or '')[:19]} | disponibilité={round(avail*100,1)}%"
-        status = "ok" if avail >= 0.8 else "degraded"
-    return jsonify({"status": status, "message": message, "db": "sqlite", "api": "Jikan (MyAnimeList)"})
+    from flask import request
+    # Si demande JSON (API), retourne JSON
+    if request.headers.get('Accept') == 'application/json':
+        ...return jsonify(...)
+    # Sinon retourne la page HTML
+    return render_template("health.html")
 @app.route("/export")
 def export():
     return jsonify(storage.export_all_json(limit=100))
