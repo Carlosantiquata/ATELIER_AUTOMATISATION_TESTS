@@ -11,8 +11,9 @@
     header{background:linear-gradient(135deg,#1a1a2e,#16213e);padding:20px 32px;border-bottom:2px solid #7c3aed;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
     header h1{font-size:1.4rem;color:#a78bfa}
     header span{font-size:0.82rem;color:#94a3b8}
-    .run-btn{background:#7c3aed;color:#fff;padding:10px 20px;border:none;border-radius:8px;font-size:.9rem;cursor:pointer;text-decoration:none;transition:background .2s}
-    .run-btn:hover{background:#6d28d9}
+    .nav-links-header{display:flex;gap:12px}
+    .nav-links-header a{color:#a78bfa;text-decoration:none;font-size:.85rem;border:1px solid #4c1d95;padding:8px 16px;border-radius:8px;transition:background .2s}
+    .nav-links-header a:hover{background:#1e1e30}
     .container{max-width:1200px;margin:0 auto;padding:24px 20px}
     .kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:16px;margin-bottom:28px}
     .kpi-card{background:#1e1e30;border:1px solid #2d2d50;border-radius:12px;padding:16px 18px;text-align:center}
@@ -46,7 +47,11 @@
     <h1>🎯 Jikan API — Dashboard de Tests</h1>
     <span>API : https://api.jikan.moe/v4 &nbsp;·&nbsp; Hunter x Hunter (MAL id 11061)</span>
   </div>
-  <a href="/run-page" class="run-btn">▶ Lancer un run</a>
+  <div class="nav-links-header">
+    <a href="/run-page">▶ Run</a>
+    <a href="/health">❤️ Health</a>
+    <a href="/export-page">⬇ Export</a>
+  </div>
 </header>
 
 <div class="container">
@@ -61,7 +66,7 @@
     <div class="kpi-card yellow"><div class="value">{{ last_run.latency_p95|round(0)|int }}ms</div><div class="label">Latence p95</div></div>
   </div>
   {% else %}
-  <div class="no-data">Aucun run encore — cliquez sur <strong>Lancer un run</strong> !</div>
+  <div class="no-data">Aucun run encore — cliquez sur <strong>▶ Run</strong> en haut à droite !</div>
   {% endif %}
 
   {% if chart_labels %}
@@ -105,7 +110,7 @@
 
   <div class="links">
     <a href="/run-page">▶ Lancer un run</a>
-    <a href="/health">❤️ /health</a>
+    <a href="/health">❤️ Health</a>
     <a href="/export-page">⬇ Export JSON</a>
   </div>
 </div>
