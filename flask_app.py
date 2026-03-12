@@ -12,22 +12,9 @@ RUN_COOLDOWN_SECONDS = 60
 @app.route("/")
 def index():
     return render_template('consignes.html')
-@app.route("/run")
-def run():
-    global _last_run_time
-    now = datetime.datetime.now(datetime.timezone.utc)
-    if _last_run_time is not None:
-        elapsed = (now - _last_run_time).total_seconds()
-        if elapsed < RUN_COOLDOWN_SECONDS:
-            wait = int(RUN_COOLDOWN_SECONDS - elapsed)
-            return jsonify({"status": "throttled", "message": f"Attendez encore {wait}s."}), 429
-    _last_run_time = now
-    try:
-        result = run_all()
-        storage.save_run(result)
-        return jsonify(result)
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+@app.route("/run-page")
+def run_page():
+    return render_template("run.html")
 @app.route("/dashboard")
 def dashboard():
     raw_runs = storage.list_runs(limit=20)
